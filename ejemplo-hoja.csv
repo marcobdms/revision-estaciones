@@ -1,0 +1,6 @@
+,,,,,,,,,,,
+Zona,Estación,Modelo,S/N Scanner,¿Se ha etiquetado a conciencia la base y el scanner?,¿La base está anclada a la estación?,Brida,Vsit estaba configurado?,¿Fecha Última Revisión?,¿Quien lo revisó?,Ticket 1,Ticket 2
+Mar,A-1001,Antiguo,10000A0001,Si,Si,Si,Si,01/01/2026,Ejemplo,,
+Mar,A-1004,Nuevo,10000a0002,Si,Si,Si,Si,01/01/2026,Ejemplo,,
+Mar,B-1002,Antiguo,1000oA0003,Si,Si,Si,Si,01/01/2026,Ejemplo,"Nota, con coma",
+Mar,B-1005,Antiguo,,Si,Si,Si,Si,01/01/2026,Ejemplo,,

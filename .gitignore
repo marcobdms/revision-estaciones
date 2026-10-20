@@ -1,0 +1,4 @@
+# Datos reales (seriales, logins): no van al repositorio
+*.csv
+!ejemplo-hoja.csv
+*.json

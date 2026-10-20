@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revisión de estaciones</title>
+<style>
+  :root {
+    --ink: #0b0b10;
+    --brand-red: #fe0000;
+    --cyan: #2de2ff;
+    --c-ink: #222222;
+    --c-muted: #6a6a6a;
+    --c-border: #dddddd;
+    --c-line: #ebebeb;
+    --c-soft: #f4f4f4;
+    --ok: #0a7d34;
+    --ok-bg: #e7f6ec;
+    --bad: #c4001a;
+    --bad-bg: #fdecee;
+    --warn: #8a5a00;
+    --warn-bg: #fff4dc;
+    --shadow-xs: 0 1px 2px rgba(0,0,0,.06);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.05);
+    --gutter: clamp(16px, 4vw, 40px);
+    --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; color: var(--c-ink); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+  main { padding: 24px 0 80px; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 0 var(--gutter) 8px; }
+  .head h1 { margin: 0; font-size: 24px; font-weight: 600; line-height: 1; }
+  .head p { margin: 0; font-size: 13px; color: var(--c-muted); line-height: 1; }
+
+  .toolbar {
+    position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px;
+    padding: 10px var(--gutter); overflow-x: auto; scrollbar-width: none;
+    background: rgba(255,255,255,.94); backdrop-filter: blur(12px); border-bottom: 1px solid var(--c-line);
+  }
+  .toolbar::-webkit-scrollbar { display: none; }
+  .spacer { flex: 1; }
+  .chip {
+    flex: none; height: 38px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--c-border); border-radius: 999px; background: #fff; font-size: 14px; font-weight: 500;
+    transition: border-color .2s ease, transform .1s ease; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--c-ink); }
+  .chip:active { transform: scale(.96); }
+  .chip.is-active { border: 2px solid var(--c-ink); padding: 0 15px; background: #f7f7f7; font-weight: 600; }
+  .chip.primary { background: var(--c-ink); color: #fff; border-color: var(--c-ink); }
+  .chip.yes.is-active { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+  .chip.no.is-active { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
+  .chip.big { height: 48px; padding: 0 22px; font-size: 16px; }
+  .chip.big.is-active { padding: 0 21px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 20px var(--gutter) 0; max-width: 1400px; }
+  @media (min-width: 1000px) { .layout { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); } }
+
+  .panel { border: 1px solid var(--c-line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-xs); padding: 20px; }
+  .panel h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+  .panel .sub { margin: 0 0 16px; font-size: 13px; color: var(--c-muted); }
+
+  .field { padding: 12px 0; border-top: 1px solid var(--c-line); }
+  .field:first-of-type { border-top: 0; }
+  .label { display: block; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--c-muted); margin-bottom: 8px; }
+  .text {
+    width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--c-border); border-radius: 12px; background: #fff; font-size: 16px;
+  }
+  .text:focus { border-color: var(--c-ink); outline: none; }
+  .text.mono { font-family: Consolas, 'Cascadia Mono', ui-monospace, monospace; font-size: 22px; letter-spacing: .06em; height: 56px; }
+  select.text { padding-right: 8px; }
+  .station-row { display: flex; gap: 10px; align-items: center; }
+  .station-row .text { max-width: 180px; }
+  .station-big { font-size: 34px; font-weight: 700; letter-spacing: .02em; margin-left: auto; white-space: nowrap; }
+  .station-big small { display: block; font-size: 12px; font-weight: 500; color: var(--c-muted); letter-spacing: .04em; text-align: right; }
+
+  .expected { margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: var(--c-soft); font-size: 13px; color: var(--c-muted); }
+  .expected b { display: block; font-family: Consolas, 'Cascadia Mono', ui-monospace, monospace; font-size: 26px; letter-spacing: .06em; color: var(--c-ink); margin-top: 2px; }
+  .match { margin-top: 10px; padding: 10px 14px; border-radius: 12px; font-weight: 600; font-size: 15px; display: none; }
+  .match.ok { display: block; background: var(--ok-bg); color: var(--ok); }
+  .match.bad { display: block; background: var(--bad-bg); color: var(--bad); }
+  .match.warn { display: block; background: var(--warn-bg); color: var(--warn); }
+
+  .q { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
+  .q span { font-size: 15px; font-weight: 500; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .date { font-size: 15px; font-weight: 600; }
+  .actions { display: flex; gap: 10px; padding-top: 16px; flex-wrap: wrap; }
+  .hidden { display: none !important; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--c-muted); padding: 8px 8px; border-bottom: 1px solid var(--c-line); white-space: nowrap; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--c-line); vertical-align: middle; }
+  tr.rec { cursor: pointer; }
+  tr.rec:hover td { background: #fafafa; }
+  tr.rec.editing td { background: #f0fbfd; }
+  .sn { font-family: Consolas, 'Cascadia Mono', ui-monospace, monospace; letter-spacing: .04em; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); }
+  .pill.muted { background: var(--c-soft); color: var(--c-muted); }
+  .empty-list { color: var(--c-muted); font-size: 14px; padding: 24px 0; text-align: center; }
+  .table-wrap { overflow-x: auto; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); display: inline-grid; place-items: center; font-size: 13px; }
+
+  /* Editor (modal) */
+  dialog { border: 0; border-radius: 18px; padding: 0; width: min(720px, calc(100vw - 32px)); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  .dlg { padding: 22px; }
+  .dlg h2 { margin: 0 0 4px; font-size: 20px; }
+  .dlg .sub { margin: 0 0 16px; font-size: 13px; color: var(--c-muted); }
+  .dlg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .dlg textarea { width: 100%; min-height: 140px; padding: 10px 12px; border: 1px solid var(--c-border); border-radius: 12px; resize: vertical; font-size: 14px; line-height: 1.5; }
+  .dlg .actions { justify-content: flex-end; }
+  .sheet-info { font-size: 13px; color: var(--c-muted); padding: 8px 0 0; }
+
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--c-ink); color: #fff;
+    padding: 10px 18px; border-radius: 999px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 32px); }
+  .toast.show { opacity: 1; }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="head">
+    <h1>Revisión</h1>
+    <p id="count"></p>
+  </div>
+
+  <div class="toolbar">
+    <div class="chips" id="floorChips" role="group" aria-label="Planta"></div>
+    <span class="spacer"></span>
+    <button class="chip" id="btnImport" title="Carga la exportación CSV de la pestaña de esta planta para ver el serial esperado">⤒ Importar hoja</button>
+    <button class="chip" id="btnExport" title="CSV con las columnas de la hoja">⤓ Exportar CSV</button>
+    <button class="chip" id="btnEditor">✎ Editor</button>
+  </div>
+
+  <div class="layout">
+    <!-- Ficha -->
+    <section class="panel" aria-label="Ficha de estación">
+      <h2>Ficha</h2>
+      <p class="sub" id="sheetState"></p>
+
+      <div class="field">
+        <span class="label">Revisado por</span>
+        <select class="text" id="login"></select>
+      </div>
+
+      <div class="field">
+        <span class="label">Zona</span>
+        <div class="chips" id="zoneChips"></div>
+      </div>
+
+      <div class="field">
+        <span class="label">Lado y número de estación</span>
+        <div class="station-row">
+          <div class="chips" id="sideChips"></div>
+          <input class="text mono" id="number" inputmode="numeric" autocomplete="off" placeholder="2310" aria-label="Número de estación">
+          <div class="station-big" id="stationBig">—<small id="stationZone"></small></div>
+        </div>
+        <div class="expected hidden" id="expected">Serial en la hoja <b id="expectedSn"></b><span id="expectedExtra"></span></div>
+      </div>
+
+      <div class="field">
+        <span class="label">S/N del escáner</span>
+        <input class="text mono" id="serial" autocomplete="off" spellcheck="false" placeholder="SERIAL COMPLETO" aria-label="Número de serie">
+        <div class="match" id="match"></div>
+        <div id="commentWrap" class="hidden" style="padding-top:10px">
+          <span class="label">No coincide: ¿qué pasa?</span>
+          <input class="text" id="comment" autocomplete="off" placeholder="Serial real, escáner cambiado, etiqueta ilegible…">
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label">Modelo</span>
+        <div class="chips" id="modelChips"></div>
+      </div>
+
+      <div class="field" id="questions"></div>
+
+      <div class="field">
+        <span class="label">Tickets</span>
+        <div class="two">
+          <input class="text" id="ticket1" autocomplete="off" placeholder="Ticket 1 / nota">
+          <input class="text" id="ticket2" autocomplete="off" placeholder="Ticket 2">
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label">Fecha de revisión</span>
+        <span class="date" id="today"></span>
+      </div>
+
+      <div class="actions">
+        <button class="chip big primary" id="btnSave">Guardar y siguiente</button>
+        <button class="chip big" id="btnClear">Limpiar</button>
+      </div>
+    </section>
+
+    <!-- Revisiones -->
+    <section class="panel" aria-label="Revisiones de esta planta">
+      <h2 id="listTitle">Revisiones</h2>
+      <p class="sub">Clic en una fila para corregirla. Todo se queda en este navegador hasta que exportes.</p>
+      <div class="table-wrap"><table id="list"></table></div>
+    </section>
+  </div>
+</main>
+
+<dialog id="editor">
+  <div class="dlg">
+    <h2>Editor</h2>
+    <p class="sub">Una opción por línea. Se guardan en este navegador.</p>
+    <div class="dlg-grid">
+      <label><span class="label">Logins</span><textarea id="edLogins"></textarea></label>
+      <label><span class="label">Zonas</span><textarea id="edZones"></textarea></label>
+      <label><span class="label">Plantas (pestañas)</span><textarea id="edFloors"></textarea></label>
+      <label><span class="label">Modelos</span><textarea id="edModels"></textarea></label>
+    </div>
+    <div class="sheet-info" id="sheetInfo"></div>
+    <div class="actions">
+      <button class="chip" id="btnBackup" title="Todo: listas, revisiones y hojas importadas">⤓ Copia de seguridad</button>
+      <button class="chip" id="btnRestore">⤒ Restaurar copia</button>
+      <button class="chip" id="btnClearFloor">Borrar revisiones de esta planta</button>
+      <span class="spacer"></span>
+      <button class="chip" id="edCancel">Cancelar</button>
+      <button class="chip primary" id="edSave">Guardar</button>
+    </div>
+  </div>
+</dialog>
+
+<input type="file" id="fileSheet" accept=".csv,text/csv">
+<input type="file" id="fileRestore" accept=".json,application/json">
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'station-review-v1';
+
+  // Columnas de la hoja de Quip, en su orden
+  var QUESTIONS = [
+    { key: 'etiquetado', short: 'Etiquetado',  label: '¿Etiquetado a conciencia (base y escáner)?', header: '¿Se ha etiquetado a conciencia la base y el scanner?', match: /etiquetad/i },
+    { key: 'anclada', short: 'Anclaje',  label: '¿Base anclada a la estación?', header: '¿La base está anclada a la estación?', match: /anclad/i },
+    { key: 'brida', short: 'Brida',  label: '¿Tiene brida?', header: 'Brida', match: /brida/i },
+    { key: 'vsit', short: 'Vsit',  label: '¿Vsit configurado?', header: 'Vsit estaba configurado?', match: /vsit/i }
+  ];
+  var COLS = [
+    { key: 'zona', header: 'Zona', match: /^zona/i },
+    { key: 'estacion', header: 'Estación', match: /estaci/i },
+    { key: 'modelo', header: 'Modelo', match: /modelo/i },
+    { key: 'serial', header: 'S/N Scanner', match: /s\/?n|serial/i }
+  ].concat(QUESTIONS).concat([
+    { key: 'fecha', header: '¿Fecha Última Revisión?', match: /fecha/i },
+    { key: 'login', header: '¿Quien lo revisó?', match: /qui[eé]n/i },
+    { key: 'ticket1', header: 'Ticket 1', match: /ticket\s*1/i },
+    { key: 'ticket2', header: 'Ticket 2', match: /ticket\s*2/i }
+  ]);
+  var EXTRA_COL = { key: 'comentario', header: 'Observaciones (revisión)' };
+
+  function defaults() {
+    return {
+      lists: {
+        logins: [],   // se añaden desde Editor (no se publican en el repo)
+        zones: ['Mar', 'Rambla', 'Ríos', 'Tibidabo'],
+        floors: ['Floor 1', 'Robotics Floor 2', 'Robotics Floor 3', 'Robotics Floor 4'],
+        models: ['Antiguo', 'Nuevo'],
+        sides: ['A', 'B']
+      },
+      floor: 'Floor 1',
+      login: '',
+      zone: 'Mar',
+      side: 'A',
+      records: [],   // revisiones guardadas
+      sheets: {}     // hoja importada por planta: { headers, rows, map, file, at }
+    };
+  }
+
+  var state = defaults();
+  var form = {};       // valores en edición
+  var editingId = null;
+
+  // ---------- Persistencia ----------
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var s = JSON.parse(raw), d = defaults();
+        if (s && Array.isArray(s.records)) {
+          state = s;
+          state.lists = Object.assign(d.lists, s.lists || {});
+          state.sheets = s.sheets || {};
+        }
+      }
+    } catch (e) {}
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { toast('No se pudo guardar en el navegador (¿lleno?). Haz una copia de seguridad.'); }
+  }
+
+  // ---------- Utilidades ----------
+  var $ = function (id) { return document.getElementById(id); };
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2800);
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  // Fecha siempre dd/mm/aaaa, sin depender del formato regional del portátil (USA)
+  function todayStr() {
+    var d = new Date();
+    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+  }
+  function snNorm(s) { return String(s || '').toUpperCase().replace(/\s+/g, ''); }
+  function stationId(side, num) { num = String(num || '').trim(); return num ? side + '-' + num : ''; }
+  function keyOf(zone, station) { return (zone || '').trim().toLowerCase() + '|' + String(station || '').toUpperCase().replace(/\s+/g, ''); }
+  function uid() { return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  // ---------- CSV ----------
+  function parseCSV(text) {
+    text = text.replace(/^﻿/, '');
+    var first = text.split(/\r?\n/)[0] || '';
+    var sep = (first.split(';').length > first.split(',').length) ? ';' : ',';
+    var rows = [], row = [], f = '', q = false;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; }
+        else f += c;
+      } else if (c === '"') q = true;
+      else if (c === sep) { row.push(f); f = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(f); rows.push(row); row = []; f = '';
+      } else f += c;
+    }
+    if (f !== '' || row.length) { row.push(f); rows.push(row); }
+    return rows;
+  }
+  function toCSV(rows) {
+    return '﻿' + rows.map(function (r) {
+      return r.map(function (v) {
+        v = String(v == null ? '' : v);
+        return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+      }).join(',');
+    }).join('\r\n') + '\r\n';
+  }
+  function download(name, text, type) {
+    var blob = new Blob([text], { type: type || 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
+  }
+  function fileSafe(s) { return String(s).replace(/[^\w\-]+/g, '_'); }
+  function stamp() { var d = new Date(); return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
+
+  // ---------- Hoja importada ----------
+  function importSheet(text, fileName) {
+    var rows = parseCSV(text);
+    var hi = -1;
+    for (var i = 0; i < Math.min(rows.length, 15); i++) {
+      if (rows[i].some(function (c) { return /estaci/i.test(c); }) && rows[i].some(function (c) { return /zona/i.test(c); })) { hi = i; break; }
+    }
+    if (hi < 0) { toast('No encontré la fila de cabeceras (Zona / Estación)'); return; }
+    var headers = rows[hi], map = {};
+    COLS.forEach(function (col) {
+      for (var j = 0; j < headers.length; j++) {
+        if (col.match.test(headers[j]) && !Object.keys(map).some(function (k) { return map[k] === j; })) { map[col.key] = j; break; }
+      }
+    });
+    if (map.estacion == null || map.zona == null) { toast('Faltan las columnas Zona o Estación'); return; }
+    var data = rows.slice(hi + 1).filter(function (r) { return r.some(function (c) { return String(c).trim() !== ''; }); });
+    state.sheets[state.floor] = { pre: rows.slice(0, hi), headers: headers, rows: data, map: map, file: fileName, at: todayStr() };
+    save(); renderAll();
+    var miss = COLS.filter(function (c) { return map[c.key] == null; }).map(function (c) { return c.header; });
+    toast(data.length + ' filas cargadas en ' + state.floor + (miss.length ? ' · sin columna: ' + miss.join(', ') : ''));
+  }
+  function sheetLookup(zone, station) {
+    var sh = state.sheets[state.floor]; if (!sh || !station) return null;
+    var k = keyOf(zone, station);
+    for (var i = 0; i < sh.rows.length; i++) {
+      var r = sh.rows[i];
+      if (keyOf(r[sh.map.zona], r[sh.map.estacion]) === k) {
+        return {
+          index: i,
+          serial: sh.map.serial != null ? snNorm(r[sh.map.serial]) : '',
+          modelo: sh.map.modelo != null ? String(r[sh.map.modelo]).trim() : '',
+          fecha: sh.map.fecha != null ? r[sh.map.fecha] : '',
+          login: sh.map.login != null ? r[sh.map.login] : ''
+        };
+      }
+    }
+    return null;
+  }
+
+  // ---------- Ficha ----------
+  function emptyForm() {
+    return { number: '', serial: '', comment: '', modelo: '', ticket1: '', ticket2: '', answers: {} };
+  }
+  function chipGroup(el, options, current, onPick, cls) {
+    el.innerHTML = '';
+    options.forEach(function (o) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip' + (cls ? ' ' + cls : '') + (o === current ? ' is-active' : ''); b.textContent = o;
+      b.setAttribute('aria-pressed', o === current);
+      b.addEventListener('click', function () { onPick(o); });
+      el.appendChild(b);
+    });
+  }
+  function renderForm() {
+    var L = state.lists;
+    var sel = $('login'); sel.innerHTML = '<option value="">— Elige tu login —</option>' +
+      L.logins.map(function (l) { return '<option' + (l === state.login ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join('');
+    chipGroup($('zoneChips'), L.zones, state.zone, function (z) { state.zone = z; save(); renderForm(); });
+    chipGroup($('sideChips'), L.sides, state.side, function (s) { state.side = s; save(); renderForm(); }, 'big');
+    chipGroup($('modelChips'), L.models, form.modelo, function (m) { form.modelo = m; renderForm(); });
+
+    var q = $('questions'); q.innerHTML = '<span class="label">Comprobaciones</span>';
+    QUESTIONS.forEach(function (qq) {
+      var row = document.createElement('div'); row.className = 'q';
+      var lab = document.createElement('span'); lab.textContent = qq.label; row.appendChild(lab);
+      var g = document.createElement('div'); g.className = 'chips';
+      ['Si', 'No'].forEach(function (v) {
+        var b = document.createElement('button'); b.type = 'button';
+        b.className = 'chip ' + (v === 'Si' ? 'yes' : 'no') + (form.answers[qq.key] === v ? ' is-active' : '');
+        b.textContent = v === 'Si' ? 'Sí' : 'No';
+        b.addEventListener('click', function () { form.answers[qq.key] = v; renderForm(); });
+        g.appendChild(b);
+      });
+      row.appendChild(g); q.appendChild(row);
+    });
+
+    var st = stationId(state.side, form.number);
+    $('stationBig').firstChild.nodeValue = st || '—';
+    $('stationZone').textContent = st ? state.zone + ' · ' + state.floor : '';
+    $('today').textContent = todayStr();
+
+    // Serial esperado y comparación
+    var found = sheetLookup(state.zone, st), exp = $('expected'), m = $('match');
+    if (found) {
+      exp.classList.remove('hidden');
+      $('expectedSn').textContent = found.serial || '(vacío en la hoja)';
+      $('expectedExtra').textContent = [found.modelo, found.fecha ? 'última revisión ' + found.fecha : '', found.login].filter(Boolean).join(' · ');
+      if (!form.modelo && found.modelo && L.models.indexOf(found.modelo) >= 0) { form.modelo = found.modelo; chipGroup($('modelChips'), L.models, form.modelo, function (mm) { form.modelo = mm; renderForm(); }); }
+    } else if (st && state.sheets[state.floor]) {
+      exp.classList.remove('hidden');
+      $('expectedSn').textContent = 'No está en la hoja';
+      $('expectedExtra').textContent = 'Revisa zona, lado y número';
+    } else {
+      exp.classList.add('hidden');
+    }
+    var sn = snNorm(form.serial), status = matchStatus(sn, found);
+    m.className = 'match' + (status ? ' ' + status.cls : '');
+    m.textContent = status ? status.text : '';
+    $('commentWrap').classList.toggle('hidden', !(status && status.cls !== 'ok') && !form.comment);
+
+    $('btnSave').textContent = editingId ? 'Guardar cambios' : 'Guardar y siguiente';
+    $('sheetState').textContent = state.sheets[state.floor]
+      ? 'Hoja de ' + state.floor + ': ' + state.sheets[state.floor].rows.length + ' filas (' + state.sheets[state.floor].file + ', ' + state.sheets[state.floor].at + ')'
+      : 'Sin hoja importada para ' + state.floor + ': no se puede comparar el serial.';
+  }
+  function matchStatus(sn, found) {
+    if (!sn || !found || !found.serial) return null;
+    if (sn === found.serial) return { cls: 'ok', text: '✓ Coincide con la hoja', match: true };
+    var oz = function (s) { return s.replace(/O/g, '0'); };
+    if (oz(sn) === oz(found.serial)) return { cls: 'warn', text: '≈ Solo cambia una O por un 0. Revisa la etiqueta', match: false };
+    return { cls: 'bad', text: '✗ No coincide con la hoja', match: false };
+  }
+
+  // Campos de texto
+  $('number').addEventListener('input', function (e) { form.number = e.target.value.replace(/\s+/g, ''); renderForm(); });
+  $('serial').addEventListener('input', function (e) {
+    var el = e.target, pos = el.selectionStart, v = snNorm(el.value);
+    if (v !== el.value) { el.value = v; try { el.setSelectionRange(pos, pos); } catch (x) {} }
+    form.serial = v; renderForm();
+  });
+  ['comment', 'ticket1', 'ticket2'].forEach(function (id) {
+    $(id).addEventListener('input', function (e) { form[id] = e.target.value; });
+  });
+  $('login').addEventListener('change', function (e) { state.login = e.target.value; save(); });
+
+  function fillInputs() {
+    $('number').value = form.number; $('serial').value = form.serial; $('comment').value = form.comment;
+    $('ticket1').value = form.ticket1; $('ticket2').value = form.ticket2;
+  }
+
+  // ---------- Guardar ----------
+  $('btnSave').addEventListener('click', function () {
+    var st = stationId(state.side, form.number);
+    var missing = [];
+    if (!state.login) missing.push('login');
+    if (!st) missing.push('número de estación');
+    if (!snNorm(form.serial)) missing.push('serial');
+    QUESTIONS.forEach(function (q) { if (!form.answers[q.key]) missing.push(q.label.replace(/[¿?]/g, '').toLowerCase()); });
+    if (missing.length) { toast('Falta: ' + missing.join(', ')); return; }
+
+    var found = sheetLookup(state.zone, st), status = matchStatus(snNorm(form.serial), found);
+    var rec = {
+      id: editingId || uid(), floor: state.floor, zona: state.zone, lado: state.side, numero: form.number, estacion: st,
+      serial: snNorm(form.serial), esperado: found ? found.serial : '', coincide: status ? status.match : null,
+      modelo: form.modelo, fecha: editingId ? (findRec(editingId) || {}).fecha || todayStr() : todayStr(), login: state.login,
+      ticket1: form.ticket1.trim(), ticket2: form.ticket2.trim(), comentario: form.comment.trim(), ts: Date.now()
+    };
+    QUESTIONS.forEach(function (q) { rec[q.key] = form.answers[q.key]; });
+
+    // Una sola revisión por estación y planta
+    var dup = state.records.filter(function (r) { return r.id !== rec.id && r.floor === rec.floor && keyOf(r.zona, r.estacion) === keyOf(rec.zona, rec.estacion); });
+    if (dup.length && !confirm(st + ' (' + rec.zona + ') ya está revisada hoy en esta lista. ¿Reemplazarla?')) return;
+    state.records = state.records.filter(function (r) { return dup.indexOf(r) < 0 && r.id !== rec.id; });
+    state.records.push(rec);
+    save();
+    toast((editingId ? 'Actualizada ' : 'Guardada ') + st);
+    editingId = null; form = emptyForm(); fillInputs(); renderAll();
+    $('number').focus();
+  });
+  $('btnClear').addEventListener('click', function () { editingId = null; form = emptyForm(); fillInputs(); renderAll(); $('number').focus(); });
+  function findRec(id) { for (var i = 0; i < state.records.length; i++) if (state.records[i].id === id) return state.records[i]; return null; }
+
+  // ---------- Lista ----------
+  function floorRecords() {
+    return state.records.filter(function (r) { return r.floor === state.floor; })
+      .sort(function (a, b) { return a.zona.localeCompare(b.zona) || a.estacion.localeCompare(b.estacion, undefined, { numeric: true }); });
+  }
+  function renderList() {
+    var recs = floorRecords(), t = $('list');
+    $('listTitle').textContent = 'Revisiones · ' + state.floor;
+    $('count').textContent = recs.length + ' revisadas en ' + state.floor;
+    if (!recs.length) { t.innerHTML = '<tr><td class="empty-list">Todavía no hay revisiones en esta planta.</td></tr>'; return; }
+    var h = '<tr><th>Estación</th><th>Zona</th><th>S/N</th><th>Hoja</th><th>Fallos</th><th>Login</th><th>Fecha</th><th></th></tr>';
+    recs.forEach(function (r) {
+      var fails = QUESTIONS.filter(function (q) { return r[q.key] === 'No'; }).map(function (q) { return q.short; });
+      var m = r.coincide === true ? '<span class="pill ok">✓</span>' : r.coincide === false ? '<span class="pill bad">✗</span>' : '<span class="pill muted">—</span>';
+      h += '<tr class="rec' + (r.id === editingId ? ' editing' : '') + '" data-id="' + r.id + '">' +
+        '<td><b>' + esc(r.estacion) + '</b></td><td>' + esc(r.zona) + '</td><td class="sn">' + esc(r.serial) + '</td><td>' + m + '</td>' +
+        '<td>' + (fails.length ? '<span class="pill bad">' + esc(fails.join(', ')) + '</span>' : '<span class="pill ok">OK</span>') + '</td>' +
+        '<td>' + esc(r.login) + '</td><td>' + esc(r.fecha) + '</td>' +
+        '<td><button class="icon-btn" data-del="' + r.id + '" title="Borrar">✕</button></td></tr>';
+    });
+    t.innerHTML = h;
+  }
+  $('list').addEventListener('click', function (e) {
+    var del = e.target.closest('[data-del]');
+    if (del) {
+      var r = findRec(del.dataset.del);
+      if (r && confirm('¿Borrar la revisión de ' + r.estacion + '?')) {
+        state.records = state.records.filter(function (x) { return x.id !== r.id; });
+        if (editingId === r.id) { editingId = null; form = emptyForm(); fillInputs(); }
+        save(); renderAll();
+      }
+      return;
+    }
+    var tr = e.target.closest('tr.rec'); if (!tr) return;
+    var rec = findRec(tr.dataset.id); if (!rec) return;
+    editingId = rec.id; state.zone = rec.zona; state.side = rec.lado;
+    form = { number: rec.numero, serial: rec.serial, comment: rec.comentario || '', modelo: rec.modelo || '', ticket1: rec.ticket1 || '', ticket2: rec.ticket2 || '', answers: {} };
+    QUESTIONS.forEach(function (q) { form.answers[q.key] = rec[q.key]; });
+    fillInputs(); renderAll(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ---------- Plantas ----------
+  function renderFloors() {
+    chipGroup($('floorChips'), state.lists.floors, state.floor, function (f) {
+      state.floor = f; editingId = null; form = emptyForm(); fillInputs(); save(); renderAll();
+    });
+  }
+  function renderAll() { renderFloors(); renderForm(); renderList(); }
+
+  // ---------- Exportar ----------
+  function recValue(r, key) { return r[key] == null ? '' : r[key]; }
+  $('btnExport').addEventListener('click', function () {
+    var recs = floorRecords();
+    if (!recs.length) { toast('No hay revisiones en ' + state.floor); return; }
+    var sh = state.sheets[state.floor];
+    if (sh) {
+      // Hoja completa: mismas filas y orden que la importada, con las revisadas actualizadas
+      var commentCol = sh.headers.length;
+      var headers = sh.headers.slice(); headers.push(EXTRA_COL.header);
+      var rows = sh.rows.map(function (r) { var c = r.slice(); while (c.length < commentCol) c.push(''); c.push(''); return c; });
+      var updated = 0, added = 0;
+      recs.forEach(function (rec) {
+        var idx = -1;
+        for (var i = 0; i < sh.rows.length; i++) if (keyOf(sh.rows[i][sh.map.zona], sh.rows[i][sh.map.estacion]) === keyOf(rec.zona, rec.estacion)) { idx = i; break; }
+        var row;
+        if (idx >= 0) { row = rows[idx]; updated++; }
+        else { row = new Array(headers.length).fill(''); rows.push(row); added++; }
+        COLS.forEach(function (col) {
+          var j = sh.map[col.key]; if (j == null) return;
+          if (col.key === 'serial' && rec.coincide === true) return; // coincide: se deja tal cual estaba
+          if (col.key === 'modelo' && !rec.modelo) return;
+          if ((col.key === 'ticket1' || col.key === 'ticket2') && !rec[col.key]) return; // no borra tickets previos
+          row[j] = recValue(rec, col.key);
+        });
+        row[commentCol] = rec.comentario || '';
+      });
+      var out = sh.pre.map(function (r) { return r; }).concat([headers]).concat(rows);
+      download('revision-' + fileSafe(state.floor) + '-hoja-completa-' + stamp() + '.csv', toCSV(out));
+      toast(updated + ' filas actualizadas' + (added ? ', ' + added + ' nuevas al final' : '') + ' · ' + rows.length + ' filas en total');
+    } else {
+      var head = COLS.map(function (c) { return c.header; }).concat([EXTRA_COL.header]);
+      var body = recs.map(function (r) { return COLS.map(function (c) { return recValue(r, c.key); }).concat([r.comentario || '']); });
+      download('revision-' + fileSafe(state.floor) + '-' + stamp() + '.csv', toCSV([head].concat(body)));
+      toast(recs.length + ' revisiones exportadas (sin hoja importada: solo las revisadas)');
+    }
+  });
+
+  // ---------- Importar hoja ----------
+  $('btnImport').addEventListener('click', function () {
+    if (state.sheets[state.floor] && !confirm('Ya hay una hoja cargada para ' + state.floor + '. ¿Reemplazarla?')) return;
+    $('fileSheet').click();
+  });
+  $('fileSheet').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader(); r.onload = function () { importSheet(String(r.result), f.name); }; r.readAsText(f, 'utf-8');
+    e.target.value = '';
+  });
+
+  // ---------- Editor ----------
+  function lines(v) { return v.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean); }
+  $('btnEditor').addEventListener('click', function () {
+    $('edLogins').value = state.lists.logins.join('\n');
+    $('edZones').value = state.lists.zones.join('\n');
+    $('edFloors').value = state.lists.floors.join('\n');
+    $('edModels').value = state.lists.models.join('\n');
+    var names = Object.keys(state.sheets);
+    $('sheetInfo').textContent = names.length ? 'Hojas importadas: ' + names.map(function (n) { return n + ' (' + state.sheets[n].rows.length + ' filas)'; }).join(' · ') : 'No hay hojas importadas.';
+    $('editor').showModal();
+  });
+  $('edCancel').addEventListener('click', function () { $('editor').close(); });
+  $('edSave').addEventListener('click', function () {
+    var L = { logins: lines($('edLogins').value), zones: lines($('edZones').value), floors: lines($('edFloors').value), models: lines($('edModels').value) };
+    if (!L.zones.length || !L.floors.length) { toast('Tiene que haber al menos una zona y una planta'); return; }
+    Object.assign(state.lists, L);
+    if (L.floors.indexOf(state.floor) < 0) state.floor = L.floors[0];
+    if (L.zones.indexOf(state.zone) < 0) state.zone = L.zones[0];
+    if (L.logins.indexOf(state.login) < 0) state.login = '';
+    save(); $('editor').close(); renderAll(); toast('Listas guardadas');
+  });
+  $('btnClearFloor').addEventListener('click', function () {
+    var n = floorRecords().length;
+    if (!n) { toast('No hay revisiones en ' + state.floor); return; }
+    if (confirm('¿Borrar las ' + n + ' revisiones de ' + state.floor + '? Exporta antes si las necesitas.')) {
+      state.records = state.records.filter(function (r) { return r.floor !== state.floor; });
+      editingId = null; save(); renderAll(); toast('Revisiones borradas');
+    }
+  });
+  $('btnBackup').addEventListener('click', function () {
+    download('revision-estaciones-copia-' + stamp() + '.json', JSON.stringify(state), 'application/json');
+  });
+  $('btnRestore').addEventListener('click', function () { $('fileRestore').click(); });
+  $('fileRestore').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var s = JSON.parse(r.result); if (!s || !Array.isArray(s.records)) throw 0;
+        if (!confirm('Restaurar sustituye todo lo de este navegador (' + state.records.length + ' revisiones). ¿Continuar?')) return;
+        var d = defaults(); state = s; state.lists = Object.assign(d.lists, s.lists || {}); state.sheets = s.sheets || {};
+        save(); $('editor').close(); editingId = null; form = emptyForm(); fillInputs(); renderAll(); toast('Copia restaurada');
+      } catch (x) { toast('Archivo no válido'); }
+    };
+    r.readAsText(f); e.target.value = '';
+  });
+
+  load();
+  form = emptyForm();
+  if (state.lists.floors.indexOf(state.floor) < 0) state.floor = state.lists.floors[0];
+  renderAll();
+})();
+</script>
+</body>
+</html>
