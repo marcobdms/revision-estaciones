@@ -1,5 +1,5 @@
-# Datos reales (seriales, logins): no van al repositorio, salvo la carpeta datos/ (decisión del propietario)
+# Datos reales (seriales, logins, enlaces internos): nunca van al repositorio. Se importan desde el portátil.
 *.csv
 !ejemplo-hoja.csv
-!datos/*.csv
 *.json
+*.xlsx

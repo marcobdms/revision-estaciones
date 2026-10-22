@@ -58,10 +58,11 @@
   .chip.big.is-active { padding: 0 21px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 
-  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 20px var(--gutter) 0; max-width: 1400px; }
-  @media (min-width: 1000px) { .layout { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); } }
+  /* La lista ocupa todo el ancho que quede: lleva las mismas columnas que la hoja de Quip */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 20px var(--gutter) 0; }
+  @media (min-width: 1000px) { .layout { grid-template-columns: minmax(0, 540px) minmax(0, 1fr); align-items: start; } }
 
-  .panel { border: 1px solid var(--c-line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-xs); padding: 20px; }
+  .panel { border: 1px solid var(--c-line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-xs); padding: 20px; min-width: 0; }
   .panel h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
   .panel .sub { margin: 0 0 16px; font-size: 13px; color: var(--c-muted); }
 
@@ -74,7 +75,8 @@
   .text:focus { border-color: var(--c-ink); outline: none; }
   .text.mono { font-family: Consolas, 'Cascadia Mono', ui-monospace, monospace; font-size: 22px; letter-spacing: .06em; height: 56px; }
   select.text { padding-right: 8px; }
-  .station-row { display: flex; gap: 10px; align-items: center; }
+  textarea.text { height: auto; min-height: 72px; padding: 10px 14px; resize: vertical; line-height: 1.4; }
+  .station-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .station-row .text { max-width: 180px; }
   .station-big { font-size: 34px; font-weight: 700; letter-spacing: .02em; margin-left: auto; white-space: nowrap; }
   .station-big small { display: block; font-size: 12px; font-weight: 500; color: var(--c-muted); letter-spacing: .04em; text-align: right; }
@@ -88,25 +90,27 @@
 
   .q { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
   .q span { font-size: 15px; font-weight: 500; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .q .chips { flex: none; }
   .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   @media (max-width: 520px) { .three { grid-template-columns: 1fr; } }
   .date { font-size: 15px; font-weight: 600; }
   .actions { display: flex; gap: 10px; padding-top: 16px; flex-wrap: wrap; }
   .hidden { display: none !important; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--c-muted); padding: 8px 8px; border-bottom: 1px solid var(--c-line); white-space: nowrap; }
-  td { padding: 10px 8px; border-bottom: 1px solid var(--c-line); vertical-align: middle; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--c-muted); padding: 8px 8px; border-bottom: 1px solid var(--c-line); white-space: nowrap; }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--c-line); vertical-align: middle; white-space: nowrap; }
+  td.comment { max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
   tr.rec { cursor: pointer; }
   tr.rec:hover td { background: #fafafa; }
   tr.rec.editing td { background: #f0fbfd; }
   .sn { font-family: Consolas, 'Cascadia Mono', ui-monospace, monospace; letter-spacing: .04em; }
+  .sn.bad { color: var(--bad); font-weight: 600; }
   .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
   .pill.ok { background: var(--ok-bg); color: var(--ok); }
   .pill.bad { background: var(--bad-bg); color: var(--bad); }
   .pill.muted { background: var(--c-soft); color: var(--c-muted); }
-  .empty-list { color: var(--c-muted); font-size: 14px; padding: 24px 0; text-align: center; }
+  .empty-list { color: var(--c-muted); font-size: 14px; padding: 24px 0; text-align: center; white-space: normal; }
   .table-wrap { overflow-x: auto; }
   .icon-btn { width: 32px; height: 32px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); display: inline-grid; place-items: center; font-size: 13px; }
 
@@ -122,7 +126,7 @@
   .sheet-info { font-size: 13px; color: var(--c-muted); padding: 8px 0 0; }
 
   .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--c-ink); color: #fff;
-    padding: 10px 18px; border-radius: 999px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 32px); }
+    padding: 10px 18px; border-radius: 18px; font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 32px); }
   .toast.show { opacity: 1; }
   input[type=file] { display: none; }
 </style>
@@ -138,7 +142,8 @@
   <div class="toolbar">
     <div class="chips" id="floorChips" role="group" aria-label="Planta"></div>
     <span class="spacer"></span>
-    <button class="chip" id="btnImport" title="Carga la exportación CSV de la pestaña de esta planta para ver el serial esperado">⤒ Importar hoja</button>
+    <button class="chip" id="btnImport" title="Excel de Quip (todas las pestañas) o CSV de la pestaña de esta planta">⤒ Importar hoja</button>
+    <button class="chip" id="btnCopy" title="Copia las filas de la pestaña para pegarlas en Quip">⧉ Copiar para Quip</button>
     <button class="chip" id="btnExport" title="CSV con las columnas de la hoja">⤓ Exportar CSV</button>
     <button class="chip" id="btnEditor">✎ Editor</button>
   </div>
@@ -163,7 +168,8 @@
         <span class="label">Lado y número de estación</span>
         <div class="station-row">
           <div class="chips" id="sideChips"></div>
-          <input class="text mono" id="number" inputmode="numeric" autocomplete="off" placeholder="2310" aria-label="Número de estación">
+          <input class="text mono" id="number" list="stationList" inputmode="numeric" autocomplete="off" placeholder="2310" aria-label="Número de estación">
+          <datalist id="stationList"></datalist>
           <div class="station-big" id="stationBig">—<small id="stationZone"></small></div>
         </div>
         <div class="expected hidden" id="expected">Serial en la hoja <b id="expectedSn"></b><span id="expectedExtra"></span></div>
@@ -173,10 +179,6 @@
         <span class="label">S/N del escáner</span>
         <input class="text mono" id="serial" autocomplete="off" spellcheck="false" placeholder="SERIAL COMPLETO" aria-label="Número de serie">
         <div class="match" id="match"></div>
-        <div id="commentWrap" class="hidden" style="padding-top:10px">
-          <span class="label">No coincide: ¿qué pasa?</span>
-          <input class="text" id="comment" autocomplete="off" placeholder="Serial real, escáner cambiado, etiqueta ilegible…">
-        </div>
       </div>
 
       <div class="field">
@@ -189,11 +191,15 @@
       <div class="field">
         <span class="label">Tickets</span>
         <div class="three">
-          <input class="text" id="ticket1" autocomplete="off" placeholder="Ticket nuevo">
-          <input class="text" id="ticket2" autocomplete="off" placeholder="Otro ticket">
-          <input class="text" id="ticket3" autocomplete="off" placeholder="Otro ticket">
+          <input class="text" id="ticket1" autocomplete="off" placeholder="Ticket 1">
+          <input class="text" id="ticket2" autocomplete="off" placeholder="Ticket 2">
+          <input class="text" id="ticket3" autocomplete="off" placeholder="Ticket 3">
         </div>
-        <div class="sheet-info" id="ticketsKnown"></div>
+      </div>
+
+      <div class="field">
+        <span class="label">Comentarios</span>
+        <textarea class="text" id="comment" rows="2" placeholder="Base suelta, escáner cambiado, etiqueta ilegible…"></textarea>
       </div>
 
       <div class="field">
@@ -210,7 +216,7 @@
     <!-- Revisiones -->
     <section class="panel" aria-label="Revisiones de esta planta">
       <h2 id="listTitle">Revisiones</h2>
-      <p class="sub">Clic en una fila para corregirla. Todo se queda en este navegador hasta que exportes.</p>
+      <p class="sub">Mismas columnas que la hoja. Clic en una fila para corregirla. Todo se queda en este navegador hasta que exportes.</p>
       <div class="table-wrap"><table id="list"></table></div>
     </section>
   </div>
@@ -219,10 +225,10 @@
 <dialog id="editor">
   <div class="dlg">
     <h2>Editor</h2>
-    <p class="sub">Una opción por línea. Se guardan en este navegador.</p>
+    <p class="sub">Una opción por línea. Se guardan en este navegador. Con hoja importada, las zonas salen de la hoja.</p>
     <div class="dlg-grid">
       <label><span class="label">Logins</span><textarea id="edLogins"></textarea></label>
-      <label><span class="label">Zonas</span><textarea id="edZones"></textarea></label>
+      <label><span class="label">Zonas (sin hoja)</span><textarea id="edZones"></textarea></label>
       <label><span class="label">Plantas (pestañas)</span><textarea id="edFloors"></textarea></label>
       <label><span class="label">Modelos</span><textarea id="edModels"></textarea></label>
     </div>
@@ -238,7 +244,7 @@
   </div>
 </dialog>
 
-<input type="file" id="fileSheet" accept=".csv,text/csv">
+<input type="file" id="fileSheet" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
 <input type="file" id="fileRestore" accept=".json,application/json">
 <div class="toast" id="toast"></div>
 
@@ -248,27 +254,28 @@
 
   var KEY = 'station-review-v1';
 
-  // Columnas de la hoja de Quip, en su orden
+  // Comprobaciones Sí/No por defecto (sin hoja importada). Con hoja, salen de sus columnas entre S/N y Fecha.
   var QUESTIONS = [
-    { key: 'etiquetado', short: 'Etiquetado',  label: '¿Etiquetado a conciencia (base y escáner)?', header: '¿Se ha etiquetado a conciencia la base y el scanner?', match: /etiquetad/i },
-    { key: 'anclada', short: 'Anclaje',  label: '¿Base anclada a la estación?', header: '¿La base está anclada a la estación?', match: /anclad/i },
-    { key: 'brida', short: 'Brida',  label: '¿Tiene brida?', header: 'Brida', match: /brida/i },
-    { key: 'vsit', short: 'Vsit',  label: '¿Vsit configurado?', header: 'Vsit estaba configurado?', match: /vsit/i }
+    { key: 'etiquetado', short: 'Etiquetado', label: '¿Se ha etiquetado a conciencia la base y el scanner?', header: '¿Se ha etiquetado a conciencia la base y el scanner?', match: /etiquetad/i },
+    { key: 'anclada', short: 'Anclada', label: '¿La base está anclada a la estación?', header: '¿La base está anclada a la estación?', match: /anclad/i },
+    { key: 'brida', short: 'Brida', label: 'Brida', header: 'Brida', match: /brida/i },
+    { key: 'vsit', short: 'Vsit', label: 'Vsit estaba configurado?', header: 'Vsit estaba configurado?', match: /vsit|virtual\s*secure/i }
   ];
+  // Orden para reconocer columnas: Floor 1 tiene «¿Etiquetadas y Virtual Secure IT aplicado?», que es Vsit
+  var QUESTION_PRIORITY = ['vsit', 'brida', 'anclada', 'etiquetado'];
   var COLS = [
     { key: 'zona', header: 'Zona', match: /^zona/i },
     { key: 'estacion', header: 'Estación', match: /estaci/i },
     { key: 'modelo', header: 'Modelo', match: /modelo/i },
-    { key: 'serial', header: 'S/N Scanner', match: /s\/?n|serial/i }
-  ].concat(QUESTIONS).concat([
-    { key: 'fecha', header: '¿Fecha Última Revisión?', match: /fecha/i },
+    { key: 'serial', header: 'S/N Scanner', match: /s\/?n|serial/i },
+    { key: 'fecha', header: '¿Fecha Ultima Revisión?', match: /fecha/i },
     { key: 'login', header: '¿Quien lo revisó?', match: /qui[eé]n/i },
     { key: 'ticket1', header: 'Ticket 1', match: /ticket\s*1/i },
     { key: 'ticket2', header: 'Ticket 2', match: /ticket\s*2/i },
-    { key: 'ticket3', header: 'Ticket 3', match: /ticket\s*3/i }
-  ]);
+    { key: 'ticket3', header: 'Ticket 3', match: /ticket\s*3/i },
+    { key: 'comentario', header: 'Comentarios', match: /comentari/i }
+  ];
   var TICKET_KEYS = ['ticket1', 'ticket2', 'ticket3'];
-  var COMMENT_COL = { key: 'comentario', header: 'Comentarios', match: /comentari/i };
   var EXTRA_HEADER = 'Observaciones (revisión)'; // solo si la hoja no trae columna de comentarios
 
   function defaults() {
@@ -278,14 +285,15 @@
         zones: ['Mar', 'Rambla', 'Ríos', 'Tibidabo', 'P3 ICQA AA2'],
         floors: ['Floor 1', 'Robotics Floor 2', 'Robotics Floor 3', 'Robotics Floor 4'],
         models: ['Antiguo', 'Nuevo'],
-        sides: ['A', 'B', 'Otra'] // Otra: nombre libre (VERNIER3 P2, P2_ICQA_AA2_01...)
+        sides: ['A', 'B', 'Otra'] // Otra: nombre libre (VERNIER3 P2, SLAM_WEST_02...)
       },
       floor: 'Floor 1',
       login: '',
       zone: 'Mar',
       side: 'A',
       records: [],   // revisiones guardadas
-      sheets: {}     // hoja importada por planta: { headers, rows, map, file, at }
+      sheets: {},    // hoja importada por planta: { pre, hdrRows, headers, rows, map, questions, file, at }
+      drafts: {}     // ficha a medias por planta: no se pierde al cambiar de planta ni al recargar
     };
   }
 
@@ -294,18 +302,20 @@
   var editingId = null;
 
   // ---------- Persistencia ----------
+  function adopt(s) {
+    var d = defaults();
+    state = s;
+    state.lists = Object.assign(d.lists, s.lists || {});
+    state.lists.sides = d.lists.sides;
+    state.sheets = s.sheets || {};
+    state.drafts = s.drafts || {};
+    // Hojas de la versión anterior (sin comprobaciones detectadas): hay que volver a importarlas
+    Object.keys(state.sheets).forEach(function (f) { if (!state.sheets[f].questions) delete state.sheets[f]; });
+  }
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
-      if (raw) {
-        var s = JSON.parse(raw), d = defaults();
-        if (s && Array.isArray(s.records)) {
-          state = s;
-          state.lists = Object.assign(d.lists, s.lists || {});
-          state.sheets = s.sheets || {};
-        }
-      }
-      state.lists.sides = defaults().lists.sides;
+      if (raw) { var s = JSON.parse(raw); if (s && Array.isArray(s.records)) adopt(s); }
     } catch (e) {}
   }
   function save() {
@@ -315,15 +325,23 @@
 
   // ---------- Utilidades ----------
   var $ = function (id) { return document.getElementById(id); };
+  var each = function (list, fn) { Array.prototype.forEach.call(list, fn); };
   function toast(msg) {
     var t = $('toast'); t.textContent = msg; t.classList.add('show');
-    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2800);
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, Math.max(2800, msg.length * 55));
   }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  // Fecha siempre dd/mm/aaaa, sin depender del formato regional del portátil (USA)
-  function todayStr() {
-    var d = new Date();
-    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  // Fecha del portátil, siempre dd/mm/aaaa aunque el formato regional sea el de EE. UU.
+  function todayStr() { var d = new Date(); return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear(); }
+  // Fecha del Excel (número de días desde 1899-12-30) a dd/mm/aaaa
+  function excelDate(n) { var d = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86400000); return pad2(d.getUTCDate()) + '/' + pad2(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); }
+  // El CSV de Quip mezcla dd/mm/aaaa y mm/dd/aaaa. Solo se corrige si no hay duda (un valor > 12)
+  function fixDate(s) {
+    var m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/.exec(String(s || ''));
+    if (!m) return s;
+    var a = +m[1], b = +m[2];
+    return b > 12 && a <= 12 ? pad2(b) + '/' + pad2(a) + '/' + m[3] : s;
   }
   function snNorm(s) { return String(s || '').toUpperCase().replace(/\s+/g, ''); }
   function stationId(side, num) {
@@ -331,20 +349,13 @@
     if (!num) return '';
     return side === 'Otra' ? num.toUpperCase() : side + '-' + num;
   }
+  function stationKey(s) { return String(s || '').toUpperCase().replace(/\s+/g, ''); }
   // Zona sin tildes ni paréntesis: 'Ríos' = 'Rios', 'Mar (col. A17)' = 'Mar'
-  function zoneKey(z) {
-    return String(z || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
-  }
+  function zoneKey(z) { return String(z || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim().toLowerCase(); }
   function zoneLabel(z) { return String(z || '').replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim(); }
-  function keyOf(zone, station) { return zoneKey(zone) + '|' + String(station || '').toUpperCase().replace(/\s+/g, ''); }
-  // La hoja mezcla dd/mm/aaaa y mm/dd/aaaa. Solo se corrige si no hay duda (un valor > 12)
-  function fixDate(s) {
-    var m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/.exec(String(s || ''));
-    if (!m) return s;
-    var a = +m[1], b = +m[2];
-    if (b > 12 && a <= 12) return String(b).padStart(2, '0') + '/' + String(a).padStart(2, '0') + '/' + m[3];
-    return s;
-  }
+  function keyOf(zone, station) { return zoneKey(zone) + '|' + stationKey(station); }
+  function cell(v) { return String(v == null ? '' : v).trim(); }
+  function yesNo(v) { v = cell(v); return /^s[ií]$/i.test(v) ? 'Si' : /^no$/i.test(v) ? 'No' : ''; }
   function uid() { return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
   // ---------- CSV ----------
@@ -382,61 +393,163 @@
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
   }
   function fileSafe(s) { return String(s).replace(/[^\w\-]+/g, '_'); }
-  function stamp() { var d = new Date(); return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
+  function stamp() { var d = new Date(); return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()); }
+
+  // ---------- Excel (.xlsx) sin librerías: ZIP + XML ----------
+  function readXlsx(buf) {
+    var dv = new DataView(buf), u8 = new Uint8Array(buf), dec = new TextDecoder('utf-8'), eocd = -1, entries = {};
+    for (var i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) return Promise.reject(new Error('no es un .xlsx'));
+    var p = dv.getUint32(eocd + 16, true);
+    for (var n = dv.getUint16(eocd + 10, true); n > 0 && dv.getUint32(p, true) === 0x02014b50; n--) {
+      var nlen = dv.getUint16(p + 28, true);
+      entries[dec.decode(u8.subarray(p + 46, p + 46 + nlen))] = { method: dv.getUint16(p + 10, true), size: dv.getUint32(p + 20, true), local: dv.getUint32(p + 42, true) };
+      p += 46 + nlen + dv.getUint16(p + 30, true) + dv.getUint16(p + 32, true);
+    }
+    function text(name) {
+      var e = entries[name]; if (!e) return Promise.resolve(null);
+      var start = e.local + 30 + dv.getUint16(e.local + 26, true) + dv.getUint16(e.local + 28, true);
+      var data = u8.subarray(start, start + e.size);
+      if (e.method === 0) return Promise.resolve(dec.decode(data));
+      return new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+    }
+    function xml(s) { return new DOMParser().parseFromString(s, 'application/xml'); }
+    return Promise.all([text('xl/workbook.xml'), text('xl/_rels/workbook.xml.rels'), text('xl/sharedStrings.xml')]).then(function (r) {
+      if (!r[0] || !r[1]) throw new Error('no es un .xlsx');
+      var rels = {}, shared = [];
+      each(xml(r[1]).getElementsByTagName('Relationship'), function (el) { rels[el.getAttribute('Id')] = el.getAttribute('Target'); });
+      if (r[2]) each(xml(r[2]).getElementsByTagName('si'), function (si) {
+        var t = ''; each(si.getElementsByTagName('t'), function (x) { if (x.parentNode.nodeName !== 'rPh') t += x.textContent; }); shared.push(t);
+      });
+      var sheets = Array.prototype.map.call(xml(r[0]).getElementsByTagName('sheet'), function (el) {
+        var target = rels[el.getAttribute('r:id')] || '';
+        return { name: el.getAttribute('name'), path: target.charAt(0) === '/' ? target.slice(1) : 'xl/' + target };
+      });
+      return Promise.all(sheets.map(function (s) {
+        return text(s.path).then(function (x) { s.rows = x ? sheetRows(xml(x), shared) : []; return s; });
+      }));
+    });
+  }
+  function colIndex(ref) { var m = /^[A-Z]+/.exec(ref)[0], n = 0; for (var i = 0; i < m.length; i++) n = n * 26 + m.charCodeAt(i) - 64; return n - 1; }
+  function sheetRows(doc, shared) {
+    var rows = [];
+    each(doc.getElementsByTagName('row'), function (r) {
+      var idx = (+r.getAttribute('r') || rows.length + 1) - 1, row = [];
+      each(r.getElementsByTagName('c'), function (c) {
+        var t = c.getAttribute('t'), v = c.getElementsByTagName('v')[0], val = v ? v.textContent : '';
+        if (t === 's') val = shared[+val] || '';
+        else if (t === 'inlineStr') val = c.textContent;
+        else if (t === 'b') val = val === '1' ? 'TRUE' : 'FALSE';
+        else if ((!t || t === 'n') && val !== '' && !isNaN(+val)) val = String(+val); // 2423382885.0 → 2423382885
+        var ref = c.getAttribute('r'), j = ref ? colIndex(ref) : row.length;
+        while (row.length < j) row.push('');
+        row[j] = val;
+      });
+      while (rows.length < idx) rows.push([]);
+      rows[idx] = row;
+    });
+    return rows;
+  }
 
   // ---------- Hoja importada ----------
-  function importSheet(text, fileName) {
-    var rows = parseCSV(text);
+  // Devuelve un error en texto o null. rows: filas tal cual (CSV o pestaña del Excel)
+  function importRows(rows, fileName, floor) {
     var hi = -1;
     for (var i = 0; i < Math.min(rows.length, 15); i++) {
       if (rows[i].some(function (c) { return /estaci/i.test(c); }) && rows[i].some(function (c) { return /zona/i.test(c); })) { hi = i; break; }
     }
-    if (hi < 0) { toast('No encontré la fila de cabeceras (Zona / Estación)'); return; }
+    if (hi < 0) return 'sin cabecera Zona / Estación';
     // Cabecera en dos filas: la segunda (Ticket 1/2/3, Comentarios) tiene vacías las cuatro primeras celdas
     var hdrRows = [rows[hi]], sub = rows[hi + 1];
-    if (sub && sub.slice(0, 4).every(function (c) { return String(c).trim() === ''; }) && sub.some(function (c) { return /ticket|comentari/i.test(c); })) hdrRows.push(sub);
+    if (sub && sub.slice(0, 4).every(function (c) { return cell(c) === ''; }) && sub.some(function (c) { return /ticket|comentari/i.test(c); })) hdrRows.push(sub);
     var headers = rows[hi].slice();
-    if (hdrRows[1]) hdrRows[1].forEach(function (h, j) { if (String(h).trim()) headers[j] = h; });
+    if (hdrRows[1]) hdrRows[1].forEach(function (h, j) { if (cell(h)) headers[j] = h; });
     var map = {};
-    COLS.concat([COMMENT_COL]).forEach(function (col) {
+    COLS.forEach(function (col) {
       for (var j = 0; j < headers.length; j++) {
         if (col.match.test(headers[j]) && !Object.keys(map).some(function (k) { return map[k] === j; })) { map[col.key] = j; break; }
       }
     });
-    if (map.estacion == null || map.zona == null) { toast('Faltan las columnas Zona o Estación'); return; }
-    var data = rows.slice(hi + hdrRows.length).filter(function (r) { return r.some(function (c) { return String(c).trim() !== ''; }); });
-    state.sheets[state.floor] = { pre: rows.slice(0, hi), hdrRows: hdrRows, headers: headers, rows: data, map: map, file: fileName, at: todayStr() };
-    // Zonas de la hoja que aún no están en la lista
-    data.forEach(function (r) {
-      var z = zoneLabel(r[map.zona]);
-      if (z && !state.lists.zones.some(function (x) { return zoneKey(x) === zoneKey(z); })) state.lists.zones.push(z);
-    });
-    save(); renderAll();
-    var miss = COLS.filter(function (c) { return map[c.key] == null; }).map(function (c) { return c.header; });
-    toast(data.length + ' filas cargadas en ' + state.floor + (miss.length ? ' · sin columna: ' + miss.join(', ') : ''));
-  }
-  function sheetLookup(zone, station) {
-    var sh = state.sheets[state.floor]; if (!sh || !station) return null;
-    var k = keyOf(zone, station);
-    for (var i = 0; i < sh.rows.length; i++) {
-      var r = sh.rows[i];
-      if (keyOf(r[sh.map.zona], r[sh.map.estacion]) === k) {
-        return {
-          index: i,
-          serial: sh.map.serial != null ? snNorm(r[sh.map.serial]) : '',
-          modelo: sh.map.modelo != null ? String(r[sh.map.modelo]).trim() : '',
-          fecha: sh.map.fecha != null ? fixDate(r[sh.map.fecha]) : '',
-          tickets: TICKET_KEYS.map(function (k) { return sh.map[k] != null ? String(r[sh.map[k]] || '').trim() : ''; }).filter(Boolean),
-          login: sh.map.login != null ? r[sh.map.login] : ''
-        };
-      }
+    if (map.estacion == null || map.zona == null) return 'faltan las columnas Zona o Estación';
+
+    // Comprobaciones: las columnas entre S/N y Fecha (Floor 1 tiene 3, Robotics 4)
+    var questions = [], used = {}, mapped = Object.keys(map).map(function (k) { return map[k]; });
+    var from = map.serial != null ? map.serial + 1 : 0, to = map.fecha != null ? map.fecha : headers.length;
+    for (var j = from; j < to; j++) {
+      var h = cell(headers[j]); if (!h || mapped.indexOf(j) >= 0) continue;
+      var def = null;
+      QUESTION_PRIORITY.forEach(function (k) { var q = QUESTIONS.filter(function (x) { return x.key === k; })[0]; if (!def && !used[k] && q.match.test(h)) def = q; });
+      var key = def ? def.key : 'q' + j; used[key] = true;
+      questions.push({ key: key, col: j, header: h, label: h, short: def ? def.short : h });
     }
+
+    var data = rows.slice(hi + hdrRows.length).map(function (r) { return r.slice(); })
+      .filter(function (r) { return r.some(function (c) { return cell(c) !== ''; }); });
+    // En el Excel las fechas reales vienen como número de días
+    if (map.fecha != null) data.forEach(function (r) { if (/^\d{5}(\.\d+)?$/.test(cell(r[map.fecha]))) r[map.fecha] = excelDate(+r[map.fecha]); });
+    state.sheets[floor] = { pre: rows.slice(0, hi), hdrRows: hdrRows, headers: headers, rows: data, map: map, questions: questions, file: fileName, at: todayStr() };
     return null;
+  }
+  function floorSheet() { return state.sheets[state.floor] || null; }
+  function floorQuestions() { var sh = floorSheet(); return sh && sh.questions.length ? sh.questions : QUESTIONS; }
+  function floorZones() {
+    var sh = floorSheet(); if (!sh) return state.lists.zones;
+    var seen = {}, out = [];
+    sh.rows.forEach(function (r) { var z = zoneLabel(r[sh.map.zona]); if (z && !seen[zoneKey(z)]) { seen[zoneKey(z)] = 1; out.push(z); } });
+    return out.length ? out : state.lists.zones;
+  }
+  // Busca la estación en la hoja de la planta (en cualquier zona; si se repite, gana la zona elegida)
+  function lookup(station, zone) {
+    var sh = floorSheet(); if (!sh || !station) return null;
+    var k = stationKey(station), hits = [];
+    sh.rows.forEach(function (r, i) { if (stationKey(r[sh.map.estacion]) === k) hits.push(i); });
+    if (!hits.length) return null;
+    var i = hits.filter(function (h) { return zoneKey(sh.rows[h][sh.map.zona]) === zoneKey(zone); })[0];
+    if (i == null) i = hits[0];
+    var r = sh.rows[i], get = function (key) { return sh.map[key] != null ? cell(r[sh.map[key]]) : ''; };
+    var answers = {};
+    sh.questions.forEach(function (q) { var v = yesNo(r[q.col]); if (v) answers[q.key] = v; });
+    return {
+      index: i, zona: get('zona'), serial: snNorm(get('serial')), modelo: get('modelo'), fecha: fixDate(get('fecha')), login: get('login'),
+      tickets: TICKET_KEYS.map(get), comentario: get('comentario'), answers: answers
+    };
   }
 
   // ---------- Ficha ----------
   function emptyForm() {
-    return { number: '', serial: '', comment: '', modelo: '', ticket1: '', ticket2: '', ticket3: '', answers: {} };
+    return { number: '', serial: '', comment: '', modelo: '', ticket1: '', ticket2: '', ticket3: '', answers: {}, prefilled: '' };
+  }
+  function formHasData() {
+    return !!(form.number || form.serial || form.comment || form.modelo || form.ticket1 || form.ticket2 || form.ticket3 || Object.keys(form.answers).length);
+  }
+  function persistDraft() {
+    state.drafts[state.floor] = { form: form, editingId: editingId, zone: state.zone, side: state.side };
+    save();
+  }
+  function restoreDraft() {
+    var d = state.drafts[state.floor];
+    form = Object.assign(emptyForm(), d && d.form);
+    editingId = d && d.editingId && findRec(d.editingId) ? d.editingId : null;
+    if (d && d.zone) state.zone = d.zone;
+    if (d && d.side) state.side = d.side;
+    var zs = floorZones();
+    if (!zs.some(function (z) { return zoneKey(z) === zoneKey(state.zone); })) state.zone = zs[0] || '';
+    fillInputs();
+  }
+  // Al escribir una estación que está en la hoja, se rellena todo con lo que pone la hoja
+  function checkPrefill() {
+    if (editingId) return;
+    var st = stationId(state.side, form.number), found = lookup(st, state.zone);
+    if (found && form.prefilled !== stationKey(st)) {
+      form.serial = found.serial; form.modelo = found.modelo; form.answers = Object.assign({}, found.answers);
+      form.ticket1 = found.tickets[0]; form.ticket2 = found.tickets[1]; form.ticket3 = found.tickets[2];
+      form.comment = found.comentario; form.prefilled = stationKey(st);
+      if (found.zona) state.zone = zoneLabel(found.zona);
+      fillInputs();
+    } else if (!found && form.prefilled) {
+      // La estación ya no es la rellenada: se quita lo que vino de la hoja
+      var keep = form.number; form = emptyForm(); form.number = keep; fillInputs();
+    }
   }
   function chipGroup(el, options, current, onPick, cls) {
     el.innerHTML = '';
@@ -448,16 +561,30 @@
       el.appendChild(b);
     });
   }
+  var listSig = '';
+  function renderStationList() {
+    var sh = floorSheet(), sig = state.floor + '|' + state.side + '|' + (sh ? sh.file + sh.at + sh.rows.length : '');
+    if (sig === listSig) return; listSig = sig;
+    var opts = [];
+    if (sh) sh.rows.forEach(function (r) {
+      var st = cell(r[sh.map.estacion]), m = /^([AB])-(\d+)$/i.exec(st), z = zoneLabel(r[sh.map.zona]);
+      if (!st) return;
+      if (state.side === 'Otra' ? !m : m && m[1].toUpperCase() === state.side) opts.push('<option value="' + esc(m && state.side !== 'Otra' ? m[2] : st) + '">' + esc(z) + '</option>');
+    });
+    $('stationList').innerHTML = opts.join('');
+  }
   function renderForm() {
     var L = state.lists;
     var sel = $('login'); sel.innerHTML = '<option value="">— Elige tu login —</option>' +
       L.logins.map(function (l) { return '<option' + (l === state.login ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join('');
-    chipGroup($('zoneChips'), L.zones, state.zone, function (z) { state.zone = z; save(); renderForm(); });
-    chipGroup($('sideChips'), L.sides, state.side, function (s) { state.side = s; save(); renderForm(); }, 'big');
+    var zones = floorZones(), activeZone = zones.filter(function (z) { return zoneKey(z) === zoneKey(state.zone); })[0];
+    chipGroup($('zoneChips'), zones, activeZone, function (z) { state.zone = z; checkPrefill(); renderForm(); });
+    chipGroup($('sideChips'), L.sides, state.side, function (s) { state.side = s; checkPrefill(); renderForm(); }, 'big');
     chipGroup($('modelChips'), L.models, form.modelo, function (m) { form.modelo = m; renderForm(); });
+    renderStationList();
 
     var q = $('questions'); q.innerHTML = '<span class="label">Comprobaciones</span>';
-    QUESTIONS.forEach(function (qq) {
+    floorQuestions().forEach(function (qq) {
       var row = document.createElement('div'); row.className = 'q';
       var lab = document.createElement('span'); lab.textContent = qq.label; row.appendChild(lab);
       var g = document.createElement('div'); g.className = 'chips';
@@ -471,40 +598,38 @@
       row.appendChild(g); q.appendChild(row);
     });
 
+    var free = state.side === 'Otra', num = $('number');
+    num.placeholder = free ? 'SLAM_WEST_02' : '2310';
+    num.setAttribute('inputmode', free ? 'text' : 'numeric');
+    num.style.maxWidth = free ? '260px' : '';
+
     var st = stationId(state.side, form.number);
     $('stationBig').firstChild.nodeValue = st || '—';
     $('stationZone').textContent = st ? state.zone + ' · ' + state.floor : '';
-    var free = state.side === 'Otra';
-    $('number').placeholder = free ? 'VERNIER3 P2' : '2310';
-    $('number').setAttribute('inputmode', free ? 'text' : 'numeric');
-    $('number').style.maxWidth = free ? '260px' : '';
     $('today').textContent = todayStr();
 
     // Serial esperado y comparación
-    var found = sheetLookup(state.zone, st), exp = $('expected'), m = $('match');
+    var found = lookup(st, state.zone), exp = $('expected'), m = $('match'), sh = floorSheet();
     if (found) {
       exp.classList.remove('hidden');
       $('expectedSn').textContent = found.serial || '(vacío en la hoja)';
       $('expectedExtra').textContent = [found.modelo, found.fecha ? 'última revisión ' + found.fecha : '', found.login].filter(Boolean).join(' · ');
-      $('ticketsKnown').textContent = found.tickets.length ? 'Ya en la hoja: ' + found.tickets.join(', ') + ' (se conservan)' : '';
-      if (!form.modelo && found.modelo && L.models.indexOf(found.modelo) >= 0) { form.modelo = found.modelo; chipGroup($('modelChips'), L.models, form.modelo, function (mm) { form.modelo = mm; renderForm(); }); }
-    } else if (st && state.sheets[state.floor]) {
+    } else if (st && sh) {
       exp.classList.remove('hidden');
       $('expectedSn').textContent = 'No está en la hoja';
-      $('expectedExtra').textContent = 'Revisa zona, lado y número';
+      $('expectedExtra').textContent = 'Revisa lado y número. Si es nueva, se añadirá al final';
     } else {
       exp.classList.add('hidden');
     }
-    if (!found) $('ticketsKnown').textContent = '';
-    var sn = snNorm(form.serial), status = matchStatus(sn, found);
+    var status = matchStatus(snNorm(form.serial), found);
     m.className = 'match' + (status ? ' ' + status.cls : '');
-    m.textContent = status ? status.text : '';
-    $('commentWrap').classList.toggle('hidden', !(status && status.cls !== 'ok') && !form.comment);
+    m.textContent = status ? status.text + (status.cls === 'ok' && form.prefilled ? '. Compruébalo con la etiqueta del escáner' : status.cls !== 'ok' ? '. Explica qué pasa en Comentarios' : '') : '';
 
     $('btnSave').textContent = editingId ? 'Guardar cambios' : 'Guardar y siguiente';
-    $('sheetState').textContent = state.sheets[state.floor]
-      ? 'Hoja de ' + state.floor + ': ' + state.sheets[state.floor].rows.length + ' filas (' + state.sheets[state.floor].file + ', ' + state.sheets[state.floor].at + ')'
-      : 'Sin hoja importada para ' + state.floor + ': no se puede comparar el serial.';
+    $('sheetState').textContent = sh
+      ? 'Hoja de ' + state.floor + ': ' + sh.rows.length + ' estaciones (' + sh.file + ', ' + sh.at + '). Escribe la estación y se rellena sola.'
+      : 'Sin hoja para ' + state.floor + '. Importa el Excel de Quip (todas las pestañas) para que la ficha se rellene sola.';
+    persistDraft();
   }
   function matchStatus(sn, found) {
     if (!sn || !found || !found.serial) return null;
@@ -515,52 +640,57 @@
   }
 
   // Campos de texto
-  $('number').addEventListener('input', function (e) { form.number = state.side === 'Otra' ? e.target.value : e.target.value.replace(/\s+/g, ''); renderForm(); });
+  function setVal(id, v) { if ($(id).value !== (v || '')) $(id).value = v || ''; }
+  function fillInputs() {
+    setVal('number', form.number); setVal('serial', form.serial); setVal('comment', form.comment);
+    setVal('ticket1', form.ticket1); setVal('ticket2', form.ticket2); setVal('ticket3', form.ticket3);
+  }
+  $('number').addEventListener('input', function (e) {
+    form.number = state.side === 'Otra' ? e.target.value : e.target.value.replace(/\s+/g, '');
+    checkPrefill(); renderForm();
+  });
   $('serial').addEventListener('input', function (e) {
     var el = e.target, pos = el.selectionStart, v = snNorm(el.value);
     if (v !== el.value) { el.value = v; try { el.setSelectionRange(pos, pos); } catch (x) {} }
     form.serial = v; renderForm();
   });
   ['comment', 'ticket1', 'ticket2', 'ticket3'].forEach(function (id) {
-    $(id).addEventListener('input', function (e) { form[id] = e.target.value; });
+    $(id).addEventListener('input', function (e) { form[id] = e.target.value; persistDraft(); });
   });
   $('login').addEventListener('change', function (e) { state.login = e.target.value; save(); });
 
-  function fillInputs() {
-    $('number').value = form.number; $('serial').value = form.serial; $('comment').value = form.comment;
-    $('ticket1').value = form.ticket1; $('ticket2').value = form.ticket2; $('ticket3').value = form.ticket3;
-  }
-
   // ---------- Guardar ----------
   $('btnSave').addEventListener('click', function () {
-    var st = stationId(state.side, form.number);
+    var st = stationId(state.side, form.number), qs = floorQuestions();
     var missing = [];
     if (!state.login) missing.push('login');
     if (!st) missing.push('número de estación');
     if (!snNorm(form.serial)) missing.push('serial');
-    QUESTIONS.forEach(function (q) { if (!form.answers[q.key]) missing.push(q.label.replace(/[¿?]/g, '').toLowerCase()); });
+    qs.forEach(function (q) { if (!form.answers[q.key]) missing.push(q.short.toLowerCase()); });
     if (missing.length) { toast('Falta: ' + missing.join(', ')); return; }
 
-    var found = sheetLookup(state.zone, st), status = matchStatus(snNorm(form.serial), found);
+    var found = lookup(st, state.zone), status = matchStatus(snNorm(form.serial), found);
     var rec = {
       id: editingId || uid(), floor: state.floor, zona: state.zone, lado: state.side, numero: form.number, estacion: st,
       serial: snNorm(form.serial), esperado: found ? found.serial : '', coincide: status ? status.match : null,
-      modelo: form.modelo, fecha: editingId ? (findRec(editingId) || {}).fecha || todayStr() : todayStr(), login: state.login,
+      modelo: form.modelo, fecha: todayStr(), login: state.login,
       ticket1: form.ticket1.trim(), ticket2: form.ticket2.trim(), ticket3: form.ticket3.trim(), comentario: form.comment.trim(), ts: Date.now()
     };
-    QUESTIONS.forEach(function (q) { rec[q.key] = form.answers[q.key]; });
+    qs.forEach(function (q) { rec[q.key] = form.answers[q.key]; });
 
     // Una sola revisión por estación y planta
     var dup = state.records.filter(function (r) { return r.id !== rec.id && r.floor === rec.floor && keyOf(r.zona, r.estacion) === keyOf(rec.zona, rec.estacion); });
-    if (dup.length && !confirm(st + ' (' + rec.zona + ') ya está revisada hoy en esta lista. ¿Reemplazarla?')) return;
+    if (dup.length && !confirm(st + ' (' + rec.zona + ') ya está en la lista. ¿Reemplazarla?')) return;
     state.records = state.records.filter(function (r) { return dup.indexOf(r) < 0 && r.id !== rec.id; });
     state.records.push(rec);
-    save();
     toast((editingId ? 'Actualizada ' : 'Guardada ') + st);
     editingId = null; form = emptyForm(); fillInputs(); renderAll();
     $('number').focus();
   });
-  $('btnClear').addEventListener('click', function () { editingId = null; form = emptyForm(); fillInputs(); renderAll(); $('number').focus(); });
+  $('btnClear').addEventListener('click', function () {
+    if (formHasData() && !confirm('¿Limpiar la ficha? Se pierde lo que no hayas guardado.')) return;
+    editingId = null; form = emptyForm(); fillInputs(); renderAll(); $('number').focus();
+  });
   function findRec(id) { for (var i = 0; i < state.records.length; i++) if (state.records[i].id === id) return state.records[i]; return null; }
 
   // ---------- Lista ----------
@@ -569,18 +699,22 @@
       .sort(function (a, b) { return a.zona.localeCompare(b.zona) || a.estacion.localeCompare(b.estacion, undefined, { numeric: true }); });
   }
   function renderList() {
-    var recs = floorRecords(), t = $('list');
+    var recs = floorRecords(), t = $('list'), qs = floorQuestions();
     $('listTitle').textContent = 'Revisiones · ' + state.floor;
     $('count').textContent = recs.length + ' revisadas en ' + state.floor;
     if (!recs.length) { t.innerHTML = '<tr><td class="empty-list">Todavía no hay revisiones en esta planta.</td></tr>'; return; }
-    var h = '<tr><th>Estación</th><th>Zona</th><th>S/N</th><th>Hoja</th><th>Fallos</th><th>Login</th><th>Fecha</th><th></th></tr>';
+    var h = '<tr><th>Zona</th><th>Estación</th><th>Modelo</th><th>S/N</th>' +
+      qs.map(function (q) { return '<th title="' + esc(q.header) + '">' + esc(q.short) + '</th>'; }).join('') +
+      '<th>Fecha</th><th>Quién</th><th>Ticket 1</th><th>Ticket 2</th><th>Ticket 3</th><th>Comentarios</th><th></th></tr>';
     recs.forEach(function (r) {
-      var fails = QUESTIONS.filter(function (q) { return r[q.key] === 'No'; }).map(function (q) { return q.short; });
-      var m = r.coincide === true ? '<span class="pill ok">✓</span>' : r.coincide === false ? '<span class="pill bad">✗</span>' : '<span class="pill muted">—</span>';
+      var snBad = r.coincide === false;
       h += '<tr class="rec' + (r.id === editingId ? ' editing' : '') + '" data-id="' + r.id + '">' +
-        '<td><b>' + esc(r.estacion) + '</b></td><td>' + esc(r.zona) + '</td><td class="sn">' + esc(r.serial) + '</td><td>' + m + '</td>' +
-        '<td>' + (fails.length ? '<span class="pill bad">' + esc(fails.join(', ')) + '</span>' : '<span class="pill ok">OK</span>') + '</td>' +
-        '<td>' + esc(r.login) + '</td><td>' + esc(r.fecha) + '</td>' +
+        '<td>' + esc(r.zona) + '</td><td><b>' + esc(r.estacion) + '</b></td><td>' + esc(r.modelo) + '</td>' +
+        '<td class="sn' + (snBad ? ' bad' : '') + '"' + (snBad ? ' title="En la hoja: ' + esc(r.esperado) + '"' : '') + '>' + esc(r.serial) + '</td>' +
+        qs.map(function (q) { var v = r[q.key]; return '<td>' + (v === 'Si' ? '<span class="pill ok">Sí</span>' : v === 'No' ? '<span class="pill bad">No</span>' : '<span class="pill muted">—</span>') + '</td>'; }).join('') +
+        '<td>' + esc(r.fecha) + '</td><td>' + esc(r.login) + '</td>' +
+        '<td>' + esc(r.ticket1) + '</td><td>' + esc(r.ticket2) + '</td><td>' + esc(r.ticket3) + '</td>' +
+        '<td class="comment" title="' + esc(r.comentario) + '">' + esc(r.comentario) + '</td>' +
         '<td><button class="icon-btn" data-del="' + r.id + '" title="Borrar">✕</button></td></tr>';
     });
     t.innerHTML = h;
@@ -592,91 +726,119 @@
       if (r && confirm('¿Borrar la revisión de ' + r.estacion + '?')) {
         state.records = state.records.filter(function (x) { return x.id !== r.id; });
         if (editingId === r.id) { editingId = null; form = emptyForm(); fillInputs(); }
-        save(); renderAll();
+        renderAll();
       }
       return;
     }
     var tr = e.target.closest('tr.rec'); if (!tr) return;
     var rec = findRec(tr.dataset.id); if (!rec) return;
+    if (formHasData() && !editingId && !confirm('Tienes una ficha a medias. ¿Dejarla y abrir ' + rec.estacion + '?')) return;
     editingId = rec.id; state.zone = rec.zona; state.side = rec.lado;
-    form = { number: rec.numero, serial: rec.serial, comment: rec.comentario || '', modelo: rec.modelo || '', ticket1: rec.ticket1 || '', ticket2: rec.ticket2 || '', ticket3: rec.ticket3 || '', answers: {} };
-    QUESTIONS.forEach(function (q) { form.answers[q.key] = rec[q.key]; });
+    form = Object.assign(emptyForm(), { number: rec.numero, serial: rec.serial, comment: rec.comentario || '', modelo: rec.modelo || '',
+      ticket1: rec.ticket1 || '', ticket2: rec.ticket2 || '', ticket3: rec.ticket3 || '', prefilled: stationKey(rec.estacion) });
+    floorQuestions().forEach(function (q) { if (rec[q.key]) form.answers[q.key] = rec[q.key]; });
     fillInputs(); renderAll(); window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ---------- Plantas ----------
   function renderFloors() {
     chipGroup($('floorChips'), state.lists.floors, state.floor, function (f) {
-      state.floor = f; editingId = null; form = emptyForm(); fillInputs(); save(); renderAll();
+      if (f === state.floor) return;
+      persistDraft();           // la ficha a medias se queda guardada en su planta
+      state.floor = f; restoreDraft(); renderAll();
     });
   }
   function renderAll() { renderFloors(); renderForm(); renderList(); }
 
   // ---------- Exportar ----------
-  function recValue(r, key) { return r[key] == null ? '' : r[key]; }
-  $('btnExport').addEventListener('click', function () {
-    var recs = floorRecords();
-    if (!recs.length) { toast('No hay revisiones en ' + state.floor); return; }
-    var sh = state.sheets[state.floor];
-    if (sh) {
-      // Hoja completa: mismas filas y orden que la importada, con las revisadas actualizadas
-      // Con columna de comentarios en la hoja se usa esa; si no, se añade una al final
-      var width = sh.headers.length, commentCol = sh.map.comentario != null ? sh.map.comentario : width;
-      var extra = sh.map.comentario == null;
-      var hdr = (sh.hdrRows || [sh.headers]).map(function (r) { var c = r.slice(); while (c.length < width) c.push(''); if (extra) c.push(''); return c; });
-      if (extra) hdr[hdr.length - 1][width] = EXTRA_HEADER;
-      var rows = sh.rows.map(function (r) {
-        var c = r.slice(); while (c.length < width) c.push(''); if (extra) c.push('');
-        if (sh.map.fecha != null) c[sh.map.fecha] = fixDate(c[sh.map.fecha]);
-        return c;
+  // Pestaña completa: mismas filas y orden que la importada, con las revisadas actualizadas
+  function buildExport() {
+    var recs = floorRecords(), sh = floorSheet(), qs = floorQuestions();
+    if (!sh) {
+      var head = ['Zona', 'Estación', 'Modelo', 'S/N Scanner'].concat(qs.map(function (q) { return q.header; }))
+        .concat(['¿Fecha Ultima Revisión?', '¿Quien lo revisó?', 'Ticket 1', 'Ticket 2', 'Ticket 3', 'Comentarios']);
+      var body = recs.map(function (r) {
+        return [r.zona, r.estacion, r.modelo, r.serial].concat(qs.map(function (q) { return r[q.key] || ''; }))
+          .concat([r.fecha, r.login, r.ticket1, r.ticket2, r.ticket3, r.comentario]);
       });
-      var updated = 0, added = 0;
-      recs.forEach(function (rec) {
-        var idx = -1;
-        for (var i = 0; i < sh.rows.length; i++) if (keyOf(sh.rows[i][sh.map.zona], sh.rows[i][sh.map.estacion]) === keyOf(rec.zona, rec.estacion)) { idx = i; break; }
-        var row;
-        if (idx >= 0) { row = rows[idx]; updated++; }
-        else { row = new Array(hdr[0].length).fill(''); rows.push(row); added++; }
-        COLS.forEach(function (col) {
-          var j = sh.map[col.key]; if (j == null) return;
-          if (idx >= 0 && (col.key === 'zona' || col.key === 'estacion')) return; // se respeta cómo está escrito en la hoja
-          if (col.key === 'serial' && rec.coincide === true) return; // coincide: se deja tal cual estaba
-          if (col.key === 'modelo' && !rec.modelo) return;
-          if (TICKET_KEYS.indexOf(col.key) >= 0) return; // los tickets se añaden aparte, sin pisar los existentes
-          row[j] = recValue(rec, col.key);
-        });
-        // Tickets nuevos: al primer hueco libre; si no caben, van a comentarios
-        var slots = TICKET_KEYS.map(function (k) { return sh.map[k]; }).filter(function (j) { return j != null; });
-        var leftover = [];
-        TICKET_KEYS.forEach(function (k) {
-          var t = rec[k]; if (!t) return;
-          if (slots.some(function (j) { return String(row[j]).trim().toUpperCase() === t.toUpperCase(); })) return;
-          var free = slots.filter(function (j) { return String(row[j]).trim() === ''; })[0];
-          if (free != null) row[free] = t; else leftover.push(t);
-        });
-        var note = [rec.comentario].concat(leftover.length ? ['Tickets: ' + leftover.join(', ')] : []).filter(Boolean).join(' · ');
-        if (note && String(row[commentCol]).indexOf(note) < 0) row[commentCol] = [row[commentCol], note].filter(function (v) { return String(v).trim(); }).join(' · ');
-      });
-      var out = sh.pre.concat(hdr).concat(rows);
-      download('revision-' + fileSafe(state.floor) + '-hoja-completa-' + stamp() + '.csv', toCSV(out));
-      toast(updated + ' filas actualizadas' + (added ? ', ' + added + ' nuevas al final' : '') + ' · ' + rows.length + ' filas en total');
-    } else {
-      var head = COLS.map(function (c) { return c.header; }).concat([COMMENT_COL.header]);
-      var body = recs.map(function (r) { return COLS.map(function (c) { return recValue(r, c.key); }).concat([r.comentario || '']); });
-      download('revision-' + fileSafe(state.floor) + '-' + stamp() + '.csv', toCSV([head].concat(body)));
-      toast(recs.length + ' revisiones exportadas (sin hoja importada: solo las revisadas)');
+      return { rows: [head].concat(body), dataStart: 1, msg: recs.length + ' revisiones (sin hoja importada: solo las revisadas)' };
     }
+    var map = sh.map, width = sh.headers.length, extra = map.comentario == null, commentCol = extra ? width : map.comentario;
+    var hdr = sh.hdrRows.map(function (r) { var c = r.slice(); while (c.length < width) c.push(''); if (extra) c.push(''); return c; });
+    if (extra) hdr[hdr.length - 1][width] = EXTRA_HEADER;
+    var rows = sh.rows.map(function (r) {
+      var c = r.slice(); while (c.length < hdr[0].length) c.push('');
+      if (map.fecha != null) c[map.fecha] = fixDate(c[map.fecha]);
+      return c;
+    });
+    var updated = 0, added = 0;
+    recs.forEach(function (rec) {
+      var f = lookup(rec.estacion, rec.zona), row;
+      if (f) { row = rows[f.index]; updated++; }
+      else {
+        row = new Array(hdr[0].length).fill(''); rows.push(row); added++;
+        row[map.zona] = rec.zona; row[map.estacion] = rec.estacion;
+      }
+      var set = function (key, v) { if (map[key] != null) row[map[key]] = v == null ? '' : v; };
+      if (rec.modelo) set('modelo', rec.modelo);
+      if (snNorm(map.serial != null ? row[map.serial] : '') !== rec.serial) set('serial', rec.serial); // si coincide, se deja como estaba
+      set('fecha', rec.fecha); set('login', rec.login);
+      qs.forEach(function (q) { if (q.col != null && rec[q.key]) row[q.col] = rec[q.key]; });
+      TICKET_KEYS.forEach(function (k) { set(k, rec[k]); }); // la ficha ya trae los tickets de la hoja
+      row[commentCol] = rec.comentario || '';
+    });
+    return {
+      rows: sh.pre.concat(hdr).concat(rows), dataStart: sh.pre.length + hdr.length, count: rows.length,
+      msg: updated + ' filas actualizadas' + (added ? ', ' + added + ' nuevas al final' : '') + ' · ' + rows.length + ' filas en total'
+    };
+  }
+  $('btnExport').addEventListener('click', function () {
+    if (!floorRecords().length) { toast('No hay revisiones en ' + state.floor); return; }
+    var x = buildExport();
+    download('revision-' + fileSafe(state.floor) + '-' + stamp() + '.csv', toCSV(x.rows));
+    toast(x.msg);
+  });
+  // Filas de datos en texto con tabuladores: en Quip se pega encima desde la primera fila de datos
+  $('btnCopy').addEventListener('click', function () {
+    if (!floorRecords().length) { toast('No hay revisiones en ' + state.floor); return; }
+    var x = buildExport();
+    var tsv = x.rows.slice(x.dataStart).map(function (r) { return r.map(function (v) { return String(v == null ? '' : v).replace(/[\t\r\n]+/g, ' '); }).join('\t'); }).join('\n');
+    var done = function () { toast('Copiadas ' + (x.rows.length - x.dataStart) + ' filas. En Quip, pestaña ' + state.floor + ': clic en la celda A' + (x.dataStart + 1) + ' y Ctrl+V'); };
+    var fallback = function () {
+      var ta = document.createElement('textarea'); ta.value = tsv; document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.remove(); if (ok) done(); else toast('No se pudo copiar. Usa Exportar CSV');
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(tsv).then(done, fallback); else fallback();
   });
 
   // ---------- Importar hoja ----------
   $('btnImport').addEventListener('click', function () {
-    if (state.sheets[state.floor] && !confirm('Ya hay una hoja cargada para ' + state.floor + '. ¿Reemplazarla?')) return;
+    if (Object.keys(state.sheets).length && !confirm('Las pestañas que importes sustituyen a las ya cargadas. Tus revisiones no se tocan. ¿Seguir?')) return;
     $('fileSheet').click();
   });
   $('fileSheet').addEventListener('change', function (e) {
     var f = e.target.files[0]; if (!f) return;
-    var r = new FileReader(); r.onload = function () { importSheet(String(r.result), f.name); }; r.readAsText(f, 'utf-8');
     e.target.value = '';
+    var finish = function (msg) { listSig = ''; restoreDraft(); renderAll(); toast(msg); };
+    if (/\.xlsx$/i.test(f.name)) {
+      f.arrayBuffer().then(readXlsx).then(function (sheets) {
+        var done = [], skipped = [];
+        sheets.forEach(function (s) {
+          var floor = state.lists.floors.filter(function (fl) { return zoneKey(fl) === zoneKey(s.name); })[0];
+          var err = floor ? importRows(s.rows, f.name, floor) : 'no es una planta';
+          if (err) skipped.push(s.name); else done.push(floor + ' (' + state.sheets[floor].rows.length + ')');
+        });
+        finish(done.length ? 'Cargadas: ' + done.join(', ') + (skipped.length ? ' · Sin usar: ' + skipped.join(', ') : '') : 'Ninguna pestaña coincide con las plantas del Editor');
+      }).catch(function (x) { toast('No se pudo leer el Excel: ' + x.message); });
+    } else {
+      var r = new FileReader();
+      r.onload = function () {
+        var err = importRows(parseCSV(String(r.result)), f.name, state.floor);
+        if (err) toast('CSV no válido: ' + err); else finish(state.sheets[state.floor].rows.length + ' filas cargadas en ' + state.floor);
+      };
+      r.readAsText(f, 'utf-8');
+    }
   });
 
   // ---------- Editor ----------
@@ -687,7 +849,7 @@
     $('edFloors').value = state.lists.floors.join('\n');
     $('edModels').value = state.lists.models.join('\n');
     var names = Object.keys(state.sheets);
-    $('sheetInfo').textContent = names.length ? 'Hojas importadas: ' + names.map(function (n) { return n + ' (' + state.sheets[n].rows.length + ' filas)'; }).join(' · ') : 'No hay hojas importadas.';
+    $('sheetInfo').textContent = names.length ? 'Hojas importadas: ' + names.map(function (n) { return n + ' (' + state.sheets[n].rows.length + ' filas, ' + state.sheets[n].questions.length + ' comprobaciones)'; }).join(' · ') : 'No hay hojas importadas.';
     $('editor').showModal();
   });
   $('edCancel').addEventListener('click', function () { $('editor').close(); });
@@ -695,17 +857,16 @@
     var L = { logins: lines($('edLogins').value), zones: lines($('edZones').value), floors: lines($('edFloors').value), models: lines($('edModels').value) };
     if (!L.zones.length || !L.floors.length) { toast('Tiene que haber al menos una zona y una planta'); return; }
     Object.assign(state.lists, L);
-    if (L.floors.indexOf(state.floor) < 0) state.floor = L.floors[0];
-    if (L.zones.indexOf(state.zone) < 0) state.zone = L.zones[0];
+    if (L.floors.indexOf(state.floor) < 0) { state.floor = L.floors[0]; restoreDraft(); }
     if (L.logins.indexOf(state.login) < 0) state.login = '';
-    save(); $('editor').close(); renderAll(); toast('Listas guardadas');
+    $('editor').close(); renderAll(); toast('Listas guardadas');
   });
   $('btnClearFloor').addEventListener('click', function () {
     var n = floorRecords().length;
     if (!n) { toast('No hay revisiones en ' + state.floor); return; }
     if (confirm('¿Borrar las ' + n + ' revisiones de ' + state.floor + '? Exporta antes si las necesitas.')) {
       state.records = state.records.filter(function (r) { return r.floor !== state.floor; });
-      editingId = null; save(); renderAll(); toast('Revisiones borradas');
+      editingId = null; renderAll(); toast('Revisiones borradas');
     }
   });
   $('btnBackup').addEventListener('click', function () {
@@ -719,16 +880,15 @@
       try {
         var s = JSON.parse(r.result); if (!s || !Array.isArray(s.records)) throw 0;
         if (!confirm('Restaurar sustituye todo lo de este navegador (' + state.records.length + ' revisiones). ¿Continuar?')) return;
-        var d = defaults(); state = s; state.lists = Object.assign(d.lists, s.lists || {}); state.sheets = s.sheets || {};
-        save(); $('editor').close(); editingId = null; form = emptyForm(); fillInputs(); renderAll(); toast('Copia restaurada');
+        adopt(s); $('editor').close(); listSig = ''; restoreDraft(); renderAll(); toast('Copia restaurada');
       } catch (x) { toast('Archivo no válido'); }
     };
     r.readAsText(f); e.target.value = '';
   });
 
   load();
-  form = emptyForm();
   if (state.lists.floors.indexOf(state.floor) < 0) state.floor = state.lists.floors[0];
+  restoreDraft();
   renderAll();
 })();
 </script>

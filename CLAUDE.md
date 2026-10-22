@@ -1,7 +1,7 @@
 # Revisión de estaciones — guía para agentes
 
 Herramienta de un solo archivo (`index.html`, JS vanilla, sin dependencias, sin red, sin build) para revisar los
-escáneres de las estaciones de BCN1 (Virtual SecureIT Standards) y volcar el resultado a la hoja de Quip vía CSV.
+escáneres de las estaciones de BCN1 (Virtual SecureIT Standards) y volcar el resultado a la hoja de Quip.
 Se usa con doble clic en Chrome o Edge desde un portátil corporativo (formato regional EE. UU., VPN Cisco).
 Proyecto hermano: `scanner-sequence` (misma filosofía: un solo HTML, `localStorage`, español).
 
@@ -9,52 +9,67 @@ Proyecto hermano: `scanner-sequence` (misma filosofía: un solo HTML, `localStor
 
 - **Un solo `index.html`.** No añadir frameworks, bundlers, CDN ni llamadas de red. Debe funcionar offline desde `file://`.
 - Idioma de la interfaz y comentarios: **español**. Estilo del código: ES5 en una IIFE (`var`, `function`), sin módulos.
-- Persistencia: `localStorage` con la clave `station-review-v1` (estado completo: listas, revisiones, hojas importadas).
-  Si cambias la forma del estado, mantén compatibilidad con copias antiguas (ver `load()` y el restaurar copia).
-- **Fecha siempre `dd/mm/aaaa`** generada a mano (`todayStr`), nunca con `toLocaleDateString` (el portátil es EE. UU.).
-- El serial se escribe completo y en mayúsculas (`snNorm`). Comparación: ✓ igual, ≈ solo difiere O/0, ✗ distinto.
-- No hay tests automáticos. Para probar, ver «Cómo probar» abajo.
+  Excepción ya usada: `Promise`, `DecompressionStream`, `TextDecoder` para leer el `.xlsx` (Chrome/Edge actuales).
+- Persistencia: `localStorage` con la clave `station-review-v1` (listas, revisiones, hojas importadas y borradores).
+  Si cambias la forma del estado, mantén compatibilidad en `adopt()` (lo usan la carga y Restaurar copia).
+- **Fecha de revisión = fecha del portátil**, siempre `dd/mm/aaaa` generada a mano (`todayStr`),
+  nunca con `toLocaleDateString` (el portátil es EE. UU.). Se pone al guardar, también al corregir una revisión.
+- El serial se guarda en mayúsculas (`snNorm`). Comparación con la hoja: ✓ igual, ≈ solo difiere O/0, ✗ distinto.
+- Toda acción que borre datos pide confirmación (Limpiar con ficha a medias, borrar fila, borrar planta, restaurar, reimportar).
+- No hay tests automáticos. Ver «Cómo probar».
 
-## Modelo de datos
+## La hoja de Quip
 
-- `state.records[]`: una revisión por estación y planta (`floor`, `zona`, `lado`, `numero`, `estacion`, `serial`,
-  `coincide`, `modelo`, `fecha`, `login`, las 4 preguntas `etiquetado|anclada|brida|vsit` = `'Si'|'No'`,
-  `ticket1..3`, `comentario`).
-- `state.sheets[planta]`: hoja de Quip importada (`pre` filas previas, `hdrRows` filas de cabecera, `headers`
-  fusionadas, `rows`, `map` columna→índice).
-- Lado `A`/`B` + número da `A-2104`. Lado **`Otra`** = nombre libre (`VERNIER3 P2`, `P2_ICQA_AA2_01`).
+Se importa el **Excel exportado de Quip** (no está en el repo) (todas las pestañas a la vez) o el CSV de una sola pestaña.
+Pestañas del libro: `Robotics Floor 2`, `Floor 1`, `Robotics Floor 3`, `Robotics Floor 4` (se usan: el nombre coincide
+con una planta del Editor), y `Cows`, `Guia de uso`, `Configuración Base…` (se ignoran).
 
-## Formato real de la hoja (importante)
+Estructura de cada pestaña de planta:
+- Fila 1: título/basura. Filas 2–3: **cabecera en dos filas** (la 3 tiene `Ticket 1/2/3` y `Comentarios`).
+  `importRows` las fusiona para mapear columnas y conserva ambas para exportar igual.
+- Columnas: `Zona`, `Estación`, `Modelo`, `S/N Scanner`, **comprobaciones Sí/No**, `¿Fecha Ultima Revisión?`,
+  `¿Quien lo revisó?`, `Ticket 1..3`, `Comentarios`.
+- **Las comprobaciones cambian por planta**: Robotics 2/3/4 tienen 4 (etiquetado, anclada, Brida, Vsit);
+  Floor 1 tiene 3 (etiquetado con Dymo, anclada, «¿Etiquetadas y Virtual Secure IT aplicado?» = Vsit).
+  Se detectan por posición (columnas entre S/N y Fecha) y se reconocen con `QUESTIONS`/`QUESTION_PRIORITY`.
+  Columnas desconocidas en ese tramo se usan igual con su cabecera como texto.
+- En el Excel las fechas reales son números (`46316` → `21/10/2026`, `excelDate`) y algunos seriales son números
+  (`2423382885.0` → `2423382885`). En el CSV de Quip esas mismas fechas salen como `mm/dd/aaaa`: ambiguo,
+  `fixDate` solo corrige si un valor es > 12. **Preferir siempre el Excel.**
+- Zonas escritas distinto (`Rios`/`Ríos`, `Mar (col. A17)`): el cruce usa `zoneKey` (sin tildes ni paréntesis).
+- Estaciones sin formato lado-número (`SLAM_WEST_02`, `VERNIER3 P2`): lado **Otra** con texto libre.
 
-El CSV exportado de Quip (ver `datos/robotics-floor-2.csv`) **no es limpio**:
-- Primera fila basura (`eifjcbvdu...`) y **cabecera en dos filas**: la 2ª (`Ticket 1, Ticket 2, Ticket 3, Comentarios`)
-  tiene vacías las 4 primeras celdas. `importSheet` las fusiona y conserva ambas para exportar igual que vino.
-- Zonas escritas distinto: `Rios` vs `Ríos`, `Mar (col. A17)`. El cruce usa `zoneKey` (sin tildes ni paréntesis).
-- Fechas mezcladas dd/mm y mm/dd (`10/21/2026`). `fixDate` solo corrige las **inequívocas** (un valor > 12).
-- Hay seriales con minúsculas y erratas en la hoja; no se corrigen sin que el revisor lo confirme.
+## Ficha
 
-## Reglas de exportación (no romper)
+- Al escribir la estación (lado + número, con sugerencias de la hoja en un `datalist`) se busca en la pestaña de la
+  planta en **cualquier zona** (`lookup`) y se **rellena todo** con lo que pone la hoja: zona, serial, modelo,
+  comprobaciones, tickets y comentarios (`checkPrefill`). El revisor confirma o corrige.
+- La ficha a medias se guarda **por planta** en `state.drafts`: cambiar de planta o recargar no la borra.
+- Las zonas que se muestran son las de la hoja de esa planta; sin hoja, las del Editor.
 
-Al exportar con hoja importada: mismas filas y orden; solo se tocan las estaciones revisadas.
-- No se sobrescriben `Zona`/`Estación` de filas existentes.
-- Si el serial coincide, se deja como estaba.
-- Tickets **nunca se pisan**: los nuevos van al primer hueco libre de Ticket 1..3; si no caben, a Comentarios.
-- Los comentarios nuevos se **añaden** a los existentes (` · `), sin duplicar.
-- Si la hoja no tiene columna `Comentarios`, se añade al final `Observaciones (revisión)`.
+## Exportar (no romper)
+
+Con hoja importada (`buildExport`): mismas filas y orden, cabecera original; solo se tocan las estaciones revisadas.
+- No se reescriben `Zona`/`Estación` de filas existentes. Si el serial coincide, se deja como estaba (respeta minúsculas).
+- Tickets y comentarios se escriben **tal cual están en la ficha** (vienen precargados de la hoja, así que no se pierden).
+- Estaciones que no estaban en la hoja se añaden al final.
+- **Exportar CSV** descarga la pestaña completa. **Copiar para Quip** copia solo las filas de datos (TSV) para pegarlas
+  en Quip desde la celda `A4`.
 
 ## Cómo probar
 
-1. Abrir `index.html`, planta «Robotics Floor 2», **Importar hoja** → `datos/robotics-floor-2.csv` (o `ejemplo-hoja.csv`).
-2. Casos a comprobar: `Ríos B-2223` (debe encontrarse con serial `17090B3843`), lado **Otra** + `VERNIER3 P2`,
-   revisar y **Exportar CSV** → abrir y verificar que cabecera (2 filas), tickets y comentarios existentes siguen.
-3. Prueba headless posible en Windows con Edge (`msedge --headless=new --dump-dom`) inyectando un script de prueba
-   en una copia temporal; no hay Node en el equipo.
+1. Abrir `index.html`, **Importar hoja** → Excel de Quip exportado en el portátil (o `ejemplo-hoja.csv` para probar sin datos reales).
+2. Robotics Floor 2, lado B, `2316` → debe rellenarse zona Mar, serial `2011N0934`, Vsit = No, tickets INC12817744 e INC12825776.
+3. Cambiar a Floor 1 y volver: la ficha sigue. Floor 1 muestra 3 comprobaciones.
+4. Guardar, Exportar CSV y comprobar que cabecera (2 filas), tickets y comentarios siguen.
+5. Prueba headless en Windows: Edge `--headless=new --dump-dom` sobre una copia temporal con un script inyectado
+   antes del cierre de la IIFE (no hay Node ni Python en el equipo).
 
 ## Confidencialidad
 
-`datos/` contiene seriales y logins reales de la planta. Mantener el repositorio **privado**. No subir capturas ni el
-manual de origen. `*.json` (copias de seguridad) sigue ignorado.
+El Excel de Quip y cualquier CSV real tienen seriales, logins y enlaces internos de la wiki: **no se suben al repo** (`.gitignore`). Se importan en local desde el portátil. No subir capturas ni el manual.
 
 ## Git
 
-El portátil corporativo bloquea `api.github.com` y no tiene `git`/`gh` en consola; el push se hace desde Visual Studio.
+El portátil corporativo bloquea `api.github.com`; `github.com` sí funciona. Git está instalado en
+`%LOCALAPPDATA%\Programs\Git`. El push lo hace el usuario (VS Code o `git push`).
