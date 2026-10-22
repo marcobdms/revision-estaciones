@@ -1,4 +1,5 @@
-# Datos reales (seriales, logins): no van al repositorio
+# Datos reales (seriales, logins): no van al repositorio, salvo la carpeta datos/ (decisión del propietario)
 *.csv
 !ejemplo-hoja.csv
+!datos/*.csv
 *.json
